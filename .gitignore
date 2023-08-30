@@ -73,3 +73,10 @@ output
 venv
 sim_build
 hls_project
+hls/**/vitis_project/
+
+# Misc
+settings.json
+dat/*.dat
+.idea/
+.vscode/
