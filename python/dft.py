@@ -53,10 +53,10 @@ plt.show()
 # %%
 def dft_magnitude(input_signal, N=1024):
     twiddle_factors = [np.exp(-2.0j * np.pi * k / N) for k in range(N)]
-    dft_result = np.zeros(N,dtype=complex)
-    for k in range(N):
+    dft_result = np.zeros(N//2,dtype=complex)
+    for k in range(N//2):
         for n in range(N):
-            dft_result[k] += input_signal[n] * twiddle_factors[(k * n) % N]
+            dft_result[k] += input_signal[n] * np.real(twiddle_factors[(k * n) % N]) + 1j* input_signal[n] * np.imag(twiddle_factors[(k * n) % N])
     dft_magnitude = np.abs(dft_result)
     return dft_magnitude
 
@@ -73,7 +73,7 @@ N = 1024
 spectrum2 = np.fft.fft(left_array[0:N])
 f = np.fft.fftfreq(N, 1/sample_rate)
 plt.figure()
-plt.plot(f, np.abs(spectrum2))
+plt.plot(f[0:spectrum.size], np.abs(spectrum2[0:spectrum.size]))
 plt.title("Numpy")
 plt.show()
 
