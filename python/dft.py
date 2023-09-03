@@ -51,33 +51,30 @@ axs[1].set_ylabel("Amplitude")
 plt.show()
 
 # %%
-def dft_magnitude(signal, N=1024):
-    magnitudes = np.zeros(N // 2)
-    for k in range(N // 2):
-        real_part = 0.0
-        imag_part = 0.0
+def dft_magnitude(input_signal, N=1024):
+    twiddle_factors = [np.exp(-2.0j * np.pi * k / N) for k in range(N)]
+    dft_result = np.zeros(N,dtype=complex)
+    for k in range(N):
         for n in range(N):
-            angle = 2 * np.pi * k * n / N
-            cos_k = float_to_fixed_point(np.cos(angle), decimal_bits=15)
-            sin_k = float_to_fixed_point(np.sin(angle), decimal_bits=15)
-            real_part += signal[n] * cos_k
-            imag_part -= signal[n] * sin_k
-        magnitudes[k] = real_part**2 + imag_part**2
-    return magnitudes
+            dft_result[k] += input_signal[n] * twiddle_factors[(k * n) % N]
+    dft_magnitude = np.abs(dft_result)
+    return dft_magnitude
 
 # %% Test algorithm with sample wave
 N = 1024
 spectrum = dft_magnitude(left_array[0:N], N)
-f = np.arange(spectrum.size)*sample_rate/(2*spectrum.size)
+f = np.fft.fftfreq(N, 1/sample_rate)
 plt.figure()
-plt.plot(f,spectrum)
+plt.plot(f[0:spectrum.size],spectrum)
+plt.title("Hand made")
 plt.show()
 # %%
 N = 1024
 spectrum2 = np.fft.fft(left_array[0:N])
 f = np.fft.fftfreq(N, 1/sample_rate)
 plt.figure()
-plt.plot(f,np.abs(spectrum2))
+plt.plot(f, np.abs(spectrum2))
+plt.title("Numpy")
 plt.show()
 
 # %% Test algorithm with 20 kHz sine wave
@@ -86,7 +83,10 @@ t = np.arange(N)/sample_rate
 sine_20khz = np.array(np.sin(2*np.pi*20e3*t)*2**15,dtype=np.int16)
 spectrum = dft_magnitude(sine_20khz, N)
 #%%
-f = np.arange(spectrum.size)*sample_rate/(2*spectrum.size)
+f = np.fft.fftfreq(N, 1/sample_rate)
 plt.figure()
 plt.plot(f[0:spectrum.size],spectrum)
+plt.title("Hand made")
 plt.show()
+
+# %%
