@@ -26,7 +26,7 @@ if len(audio_data.shape) == 2:
     left_channel = audio_data[:, 0]
     right_channel = audio_data[:, 1]
 else:
-    left_channel = audio_data  # Handle mono audio as well
+    mono_channel = audio_data  # Handle mono audio as well
 
 # %% Convert the channel data to NumPy arrays
 left_array = np.array(left_channel, dtype=np.int16)

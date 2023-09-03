@@ -1,2 +1,3 @@
 hls/**/vitis_project/
 settings.json
+dat/*.dat
