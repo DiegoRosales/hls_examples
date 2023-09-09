@@ -20,8 +20,8 @@
         "${core_root}/rtl/controller_unit/i2c_core/verilog-i2c/rtl/i2c_master.v",
         "${core_root}/rtl/controller_unit/i2c_core/verilog-i2c/rtl/i2c_master_wbs_8.v",
         "${core_root}/rtl/controller_unit/i2c_core/verilog-i2c/rtl/axis_fifo.v",
-        "${core_root}/../../target/xilinx_ip_tcl/codec_audio_clock_generator/codec_audio_clock_generator.xci",
-        "${core_root}/../../target/xilinx_ip_tcl/audio_data_fifo/audio_data_fifo.xci",
+        "${core_root}/rtl/codec_audio_clock_generator.xci",
+        "${core_root}/rtl/audio_data_fifo.xci",
         "${core_root}/../../source/common/rtl/synchronizer.sv",
         "${core_root}/../../source/common/rtl/pulse_synchronizer.sv",
         "${core_root}/../../source/common/rtl/axi_slave_controller.sv"

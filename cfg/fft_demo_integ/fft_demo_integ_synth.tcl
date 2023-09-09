@@ -126,8 +126,6 @@ integ_utils::create_hierarchy_level -name $zynq_cpu_hier
 set core_config [list \
                     CONFIG.PCW_USE_FABRIC_INTERRUPT {1}       \
                     CONFIG.PCW_IRQ_F2P_INTR         {1}       \
-                    CONFIG.PCW_USE_S_AXI_HP0        {1}       \
-                    CONFIG.PCW_S_AXI_HP0_DATA_WIDTH {64}      \
                     CONFIG.PCW_EN_CLK0_PORT {1}               \
                     CONFIG.PCW_FPGA0_PERIPHERAL_FREQMHZ {125} \
                 ]
@@ -150,19 +148,6 @@ integ_utils::create_core_instance -inst_name          zynq \
                                   -config             $core_config \
                                   -apply_board_preset $core_board_preset
 
-## AXI Smart Connect for the DMA
-# 1 Slave Interface
-set core_config [list \
-                    CONFIG.NUM_SI {1}  \
-                ]
-
-integ_utils::create_core_instance -inst_name axi_smartconnect_zynq \
-                                  -vendor    xilinx.com \
-                                  -library   ip \
-                                  -name      smartconnect \
-                                  -version   1.0 \
-                                  -hierarchy $zynq_cpu_hier \
-                                  -config    $core_config
 
 ## AXI Interconnect for the AXI-lite slaves
 # 3 Master Interfaces
@@ -227,10 +212,6 @@ integ_utils::connect -from_instance ${zynq_cpu_hier}/axi_interconnect_zynq -from
 integ_utils::connect -from_instance ${zynq_cpu_hier}/axi_interconnect_zynq -from_interface M02_AXI \
                      -to_instance   axi_gpio_0                             -to_interface   S_AXI
 
-### AXI DMA Connections ###
-# integ_utils::connect -from_instance ${zynq_cpu_hier}/axi_smartconnect_zynq -from_interface S00_AXI \
-#                      -to_instance   ${sampler_hier}/sampler_dma            -to_interface   axi_dma_interface
-
 ### Interrupt Connections ###
 # GPIO
 integ_utils::connect -from_instance ${zynq_cpu_hier}/intr_concat_zynq      -from_interface In0 \
@@ -251,10 +232,6 @@ integ_utils::connect -from_instance ${zynq_cpu_hier}/intr_concat_zynq      -from
 
 
 ### Internal AXI Zynq Connections ###
-# AXI DMA
-integ_utils::connect -from_instance ${zynq_cpu_hier}/axi_smartconnect_zynq -from_interface M00_AXI \
-                     -to_instance   ${zynq_cpu_hier}/zynq                  -to_interface   S_AXI_HP0
-
 # AXI Lite
 integ_utils::connect -from_instance ${zynq_cpu_hier}/axi_interconnect_zynq -from_interface S00_AXI \
                      -to_instance   ${zynq_cpu_hier}/zynq                  -to_interface   M_AXI_GP0
@@ -267,7 +244,6 @@ integ_utils::connect -from_instance ${zynq_cpu_hier}/intr_concat_zynq      -from
 ### Clocking ###
 set clock_destinations [list                               \
   ${sampler_hier}/codec_controller        axi_clk          \
-  ${zynq_cpu_hier}/axi_smartconnect_zynq  aclk             \
   ${zynq_cpu_hier}/axi_interconnect_zynq  ACLK             \
   ${zynq_cpu_hier}/axi_interconnect_zynq  M00_ACLK         \
   ${zynq_cpu_hier}/axi_interconnect_zynq  M01_ACLK         \
@@ -304,7 +280,6 @@ foreach {dest_instance dest_port} $peripheral_reset_destinations {
 ## Interconnect Reset
 set interconn_reset_destinations [list \
   ${zynq_cpu_hier}/axi_interconnect_zynq  ARESETN \
-  ${zynq_cpu_hier}/axi_smartconnect_zynq  aresetn \
 ]
 
 foreach {dest_instance dest_port} $interconn_reset_destinations {

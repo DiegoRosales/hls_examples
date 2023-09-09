@@ -55,6 +55,7 @@ proc integ_utils::init {args} {
 
 
   ## Add the packaged IPs to the repository
+  puts "set_property ip_repo_paths $parsed_args(ip_repo_list) [current_project]"
   set_property ip_repo_paths $parsed_args(ip_repo_list) [current_project]
   update_ip_catalog
 
@@ -430,7 +431,7 @@ proc integ_utils::finalize {args} {
     puts "Keeping the project open"
   } else {
     puts "Closing project"
-    close_project
+    # close_project
   }
 
 }
