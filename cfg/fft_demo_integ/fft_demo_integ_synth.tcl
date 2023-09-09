@@ -6,7 +6,10 @@
 set project_name         $integ_project_name
 set project_dir          $integ_project_dir
 set project_top          $integ_project_top
-set ip_repo_list         [list ${packaged_cores_dirname} ${user_interfaces_dir}]
+set ip_repo_list         [list  ${packaged_cores_dirname} \
+                                ${user_interfaces_dir} \
+                                ./hls/test/hls_project/solution_1/impl/ip \
+                                ]
 set bus_definition_list  [list ${vivado_interface_path}/gpio_v1_0/gpio.xml           \
                                ${vivado_interface_path}/axis_v1_0/axis.xml           \
                                ${vivado_interface_path}/aximm_v1_0/aximm.xml         \

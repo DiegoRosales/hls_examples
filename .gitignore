@@ -50,7 +50,8 @@ Temporary Items
 *.log
 *.jou
 project*
-test*
+solution_1
+hls.app
 audio_sampler_*
 packaged_ip*
 *.Xil

@@ -20,3 +20,5 @@ set_property used_in_synthesis false [get_files  ./source/constraints/physical_c
 
 make_wrapper -files [get_files ./target/fft_demo_integ/bd/fft_demo_top/fft_demo_top.bd] -top
 add_files -norecurse ./target/fft_demo_integ/bd/fft_demo_top/hdl/fft_demo_top_wrapper.v
+
+launch_runs impl_1 -to_step write_bitstream -jobs 2
