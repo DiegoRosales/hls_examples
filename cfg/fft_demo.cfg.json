@@ -1,0 +1,59 @@
+////////////////////////////////
+// Project configuration
+////////////////////////////////
+{
+
+  "project_name": "fft_demo",
+  "project_root": "${git_root}",
+  /////////////////////
+  // Ingredients
+  /////////////////////
+
+  // Project cores to be packaged
+  "project_cores": [ 
+    "${project_root}/source/common",
+    "${project_root}/subsystems/codec_unit",
+    "${project_root}/subsystems/verification_components/axi4_lite_bfm",
+    "${project_root}/subsystems/verification_components/clock_and_reset_bfm",
+    "${project_root}/subsystems/verification_components/i2s_bfm"
+  ],
+
+  // Project integration script
+  "project_integ_script": "${project_root}/cfg/fft_demo_integ/fft_demo_integ.tcl",
+
+  // User interface definitions
+  "user_interfaces_dir": "${project_root}/board_files/interfaces",
+
+  // Constraints
+  // Read right before synthesis starts
+  "constraints_synth": "${project_root}/source/constraints/timing_constraints.xdc",
+  // Read right before place and route starts
+  "constraints_par":[
+    "${project_root}/source/constraints/pin_assignment.xdc",
+    "${project_root}/source/constraints/physical_constraints.xdc"
+  ],
+
+  // Register map
+  "project_regmap": "${project_root}/source/common/reg/fft_demo_regmap.tcl",
+
+  /////////////////////
+  // Build Variables
+  /////////////////////
+  // Part numbers
+  "fpga_part" : "xc7z010clg400-1",
+  "board_part": "digilentinc.com:zybo:part0:1.0",
+
+  // Target directory
+  "results_dirname": "target",
+
+  // Project integration variables
+  "integ_project_name":   "${project_name}_integ",
+  "integ_project_top":    "${project_name}_top",
+
+  // Xilinx IPs generation variables
+  "gen_xilinx_ip_tcl_dirname": "xilinx_ip_tcl",
+  "gen_xilinx_ip_xci_dirname": "xilinx_ip_xci",
+
+  // Vitis workspace
+  "workspace_project_name":    "${project_name}_ws"
+}
