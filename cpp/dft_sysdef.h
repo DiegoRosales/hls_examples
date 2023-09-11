@@ -1,9 +1,8 @@
 #pragma once
-#include <cmath>
 #include "ap_fixed.h"
 
 static const int N = 1024;
-static const int n_clog2_c = ceil(log2(N));
+static const int n_clog2_c = 10;
 typedef ap_fixed<16, 1> TR_INPUT_SIGNAL;
 typedef ap_fixed<16, 1> TR_TWIDDLE_FACTOR;
 typedef std::complex<TR_TWIDDLE_FACTOR> TC_TWIDDLE_FACTOR;

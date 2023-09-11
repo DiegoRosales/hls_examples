@@ -6,6 +6,6 @@ void dft_wrapper(
     // Outputs
     TR_DFT_NORM dft_magnitudes[N / 2])
 {
-    static dft dft_obj;
+    static dft<N, n_clog2_c> dft_obj;
     dft_obj.computeDFTMagnitude(input_signal, dft_magnitudes);
 }
