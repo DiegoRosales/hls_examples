@@ -1,3 +1,6 @@
 [submodule "submodules/PYNQ"]
 	path = submodules/PYNQ
 	url = https://github.com/Xilinx/PYNQ.git
+[submodule "submodules/ZYBO-PYNQ"]
+	path = submodules/ZYBO-PYNQ
+	url = https://github.com/ussamazahid96/ZYBO-PYNQ.git
