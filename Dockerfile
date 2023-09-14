@@ -109,6 +109,11 @@ RUN wget -O /usr/bin/qemu-x86_64-static https://github.com/multiarch/qemu-user-s
 RUN wget -O /usr/bin/qemu-aarch64-static https://github.com/multiarch/qemu-user-static/releases/download/v5.2.0-1/qemu-aarch64-static
 RUN wget -O /usr/bin/qemu-arm-static https://github.com/multiarch/qemu-user-static/releases/download/v5.2.0-1/qemu-arm-static
 
+# Install cg-ng
+RUN wget -O /tmp/crosstool-ng-1.26.0_rc1.tar.xz http://crosstool-ng.org/download/crosstool-ng/crosstool-ng-1.26.0_rc1.tar.xz
+RUN cd /tmp && tar -xf crosstool-ng-1.26.0_rc1.tar.xz
+RUN cd /tmp/crosstool-ng-1.26.0_rc1 && ./configure --enable-local && make && make install
+
 # Switch to the new user
 USER diego
 
