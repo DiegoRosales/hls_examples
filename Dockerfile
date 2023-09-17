@@ -117,7 +117,7 @@ RUN cd /tmp && tar -xf crosstool-ng-1.26.0_rc1.tar.xz
 RUN cd /tmp/crosstool-ng-1.26.0_rc1 && ./configure --enable-local && make && make install
 
 RUN chmod 777 /tmp
-
+RUN chsh -s /bin/bash diego
 # Switch to the new user
 USER diego
 
@@ -129,9 +129,9 @@ COPY pynq_sdist.tar.gz /tmp/PYNQ/sdbuild/prebuilt/
 COPY pynq_rootfs.arm.tar.gz /tmp/PYNQ/sdbuild/prebuilt/
 
 COPY scripts/makefile /tmp/PYNQ/boards/Zybo/petalinux_bsp/hardware_project/makefile
-COPY target/fft_demo_integ/fft_demo_top_wrapper.hdf /tmp/PYNQ/boards/Zybo/petalinux_bsp/hardware_project/zybo.hdf
-COPY target/fft_demo_integ/fft_demo_top_wrapper.xsa /tmp/PYNQ/boards/Zybo/petalinux_bsp/hardware_project/zybo.xsa
-COPY target/fft_demo_integ/fft_demo_integ.runs/impl_1/fft_demo_top_wrapper.bit /tmp/PYNQ/boards/Zybo/petalinux_bsp/hardware_project/zybo.bit
+# COPY target/fft_demo_integ/fft_demo_top_wrapper.hdf /tmp/PYNQ/boards/Zybo/petalinux_bsp/hardware_project/zybo.hdf
+# COPY target/fft_demo_integ/fft_demo_top_wrapper.xsa /tmp/PYNQ/boards/Zybo/petalinux_bsp/hardware_project/zybo.xsa
+# COPY target/fft_demo_integ/fft_demo_integ.runs/impl_1/fft_demo_top_wrapper.bit /tmp/PYNQ/boards/Zybo/petalinux_bsp/hardware_project/zybo.bit
 
 RUN sudo chmod 777 -R /tmp/PYNQ
 
@@ -140,9 +140,9 @@ RUN git config --global --add safe.directory /tmp/PYNQ
 
 # Set the working directory to the user's home directory
 WORKDIR /home/diego
-COPY entrypoint.sh /home/diego/entrypoint.sh
+COPY entrypoint.bash /home/diego/entrypoint.bash
+
 
 # Start a shell or your desired application when the container is run
 # CMD ["/bin/bash"]
-ENTRYPOINT ["/home/diego/entrypoint.sh"]
-CMD ["/bin/bash"]
+SHELL ["/bin/bash", "-c"]
