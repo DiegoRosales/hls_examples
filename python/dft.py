@@ -90,3 +90,54 @@ plt.title("Hand made")
 plt.show()
 
 # %%
+def reverse_bits(num, num_bits):
+    reversed_num = 0
+
+    for i in range(num_bits):
+        bit = (num >> i) & 1  # Extract the i-th bit of num
+        reversed_num |= (bit << (num_bits - 1 - i))  # Set the i-th bit in reversed_num
+
+    return reversed_num
+
+def fft_radix2(x):
+    N = len(x)
+    num_bits =  np.log2(N)
+    if num_bits!= int(num_bits):
+        raise ValueError("Input size must be power of 2 for this implementation.")
+    num_bits = int(num_bits)
+
+    # Bit-reversal permutation for N=1024
+    bit_reversed = np.zeros(N,dtype=np.int16)
+    for i in range(N):
+        bit_reversed[i] = reverse_bits(i, num_bits)
+
+    # Initialize twiddle factors
+    twiddle_factors = np.exp(-2j * np.pi * np.arange(N) / N)
+
+    # Perform bit-reversed permutation on input data
+    X = x[bit_reversed].astype(np.complex128)
+    # Butterfly computation
+    for s in range(1, int(np.log2(N)) + 1):
+        m = 2**s
+        w_m = np.exp(-2j * np.pi / m)
+
+        for k in range(0, N, m):
+            w = 1
+            for j in range(m // 2):
+                t = w * X[k + j + int(m // 2)]
+                u = X[k + j]
+                X[k + j] = u + t
+                X[k + j + m // 2] = u - t
+                w *= twiddle_factors[N // m]
+
+    return X
+
+# Example usage:
+input_signal = left_array[0:N]
+fft_result = fft_radix2(input_signal)
+f = np.fft.fftfreq(N, 1/sample_rate)
+plt.figure()
+plt.plot(f,np.abs(fft_result))
+plt.title("FFT Radix-2")
+plt.show()
+# %%
