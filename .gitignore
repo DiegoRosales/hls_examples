@@ -68,3 +68,5 @@ xvlog.pb
 vitis_pid*.str
 __pycache__
 target*
+output
+*.tar.gz
