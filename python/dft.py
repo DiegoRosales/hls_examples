@@ -119,10 +119,10 @@ def fft_radix2(x):
     # Butterfly computation
     for s in range(1, int(np.log2(N)) + 1):
         m = 2**s
-        w_m = np.exp(-2j * np.pi / m)
 
         for k in range(0, N, m):
             w = 1
+            
             for j in range(m // 2):
                 t = w * X[k + j + int(m // 2)]
                 u = X[k + j]
