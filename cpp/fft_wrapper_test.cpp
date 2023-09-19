@@ -5,10 +5,11 @@
 
 int main()
 {
-    hls::stream<TR_INPUT_SIGNAL> input_signal_stream;
-    TR_INPUT_SIGNAL input_signal;
-    double input_signal_double;
-    TR_FFT_NORM fft_magnitudes[N];
+    hls::stream<TI_INPUT_SIGNAL> input_signal_stream;
+    TI_INPUT_SIGNAL input_signal;
+    int input_signal_int;
+    TC_FFT fft_output[N];
+    double fft_magnitud;
     int sample_idx;
     TB start = 0;
     TB done;
@@ -26,27 +27,30 @@ int main()
         {
             start = 1;
         }
-        fscanf(fp, "%d %lf\n", &sample_idx, &input_signal_double);
-        input_signal = TR_INPUT_SIGNAL(input_signal_double);
+        fscanf(fp, "%d %d\n", &sample_idx, &input_signal_int);
+        input_signal = TI_INPUT_SIGNAL(input_signal_int);
         // fprintf(stdout, "input_signal_double[%d] = %lf = %lf\n", sample_idx, input_signal_double, input_signal.to_double());
         // fprintf(stdout, "input_signal_fixed[%d] = %lf\n", sample_idx, input_signal.to_double());
         input_signal_stream.write(input_signal);
 
-        fft_wrapper(input_signal_stream, start, fft_magnitudes, done);
-        fprintf(stdout, "start = %d\n", start);
+        fft_wrapper(input_signal_stream, start, fft_output, done);
+        // fprintf(stdout, "start = %d\n", start);
     }
 
     while (done == 0)
     {
-        fft_wrapper(input_signal_stream, start, fft_magnitudes, done);
-        fprintf(stdout, "done = %d\n", done);
+        fft_wrapper(input_signal_stream, start, fft_output, done);
+        // fprintf(stdout, "done = %d\n", done);
     }
-    fprintf(stdout, "start (end) = %d\n", start);
+    // fprintf(stdout, "start (end) = %d\n", start);
 
     fclose(fp); // Close the file
+
+    fp = fopen("E:/git/hls_examples/dat/generated_data.dat", "w");
     for (int i = 0; i < N; i++)
     {
-        fprintf(stdout, "fft_magnitudes[%d] = %lf,\n", i, fft_magnitudes[i].to_double());
+        fft_magnitud = fft_output[i].real().to_double() * fft_output[i].real().to_double() + fft_output[i].imag().to_double() * fft_output[i].imag().to_double();
+        fprintf(fp, "%d %lf\n", i, fft_magnitud);
     }
     return 0;
 }

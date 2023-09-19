@@ -122,9 +122,9 @@ def fft_radix2(x):
 
         for k in range(0, N, m):
             w = 1
-            
+
             for j in range(m // 2):
-                t = w * X[k + j + int(m // 2)]
+                t = w * X[k + j + m // 2]
                 u = X[k + j]
                 X[k + j] = u + t
                 X[k + j + m // 2] = u - t
@@ -133,11 +133,26 @@ def fft_radix2(x):
     return X
 
 # Example usage:
-input_signal = left_array[0:N]
-fft_result = fft_radix2(input_signal)
+input_signal = np.loadtxt('E:/git/hls_examples/dat/file_example_WAV_1MG.dat', usecols=(1,))
+fft_result = fft_radix2(input_signal[0:N])
 f = np.fft.fftfreq(N, 1/sample_rate)
 plt.figure()
 plt.plot(f,np.abs(fft_result))
 plt.title("FFT Radix-2")
+plt.show()
+
+# %% Read C-Sim output and compare errors with golden input
+N = 1024
+sample_rate = 44100
+input_signal = np.loadtxt('E:/git/hls_examples/dat/file_example_WAV_1MG.dat', usecols=(1,))
+fft_result = fft_radix2(input_signal[0:N])
+generated_data = np.loadtxt('../dat/generated_data.dat', usecols=(1,))
+
+mse = np.linalg.norm(np.abs(fft_result)**2 - generated_data)
+print("MSE = " + str(mse))
+
+f = np.fft.fftfreq(N, 1/sample_rate)
+plt.figure()
+plt.plot(f, generated_data)
 plt.show()
 # %%

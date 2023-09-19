@@ -12,9 +12,9 @@ sample_rate, audio_data = wavfile.read(wav_path)
 
 # If audio_data is a stereo array (2D), split it into left and right channels
 if len(audio_data.shape) == 2:
-    mono_channel = (audio_data[:, 0] + audio_data[:, 1]) / 2**15
+    mono_channel = (audio_data[:, 0] + audio_data[:, 1])
 else:
-    mono_channel = audio_data / 2**15  # Handle mono audio as well
+    mono_channel = audio_data  # Handle mono audio as well
 
 # Export wav file as a dat file
 # Add an index column to the data
@@ -25,7 +25,7 @@ file_path = "../dat/" + wav_filename + ".dat"
 np.savetxt(
     file_path,
     data_with_index,
-    fmt="%d %lf",
+    fmt="%d %d",
     delimiter="\n",
     comments="",
 )

@@ -5,8 +5,8 @@
 
 void fft_wrapper(
     // Inputs
-    hls::stream<TR_INPUT_SIGNAL> &input_signal,
+    hls::stream<TI_INPUT_SIGNAL> &input_signal,
     TB &start,
     // Outputs
-    TR_FFT_NORM fft_magnitudes[N],
+    TC_FFT fft_output[N],
     TB &done);

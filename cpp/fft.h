@@ -61,17 +61,24 @@ public:
     T_C comp_mult_three_dsp(const T_A &a, const T_B &b)
     {
         T_C c;
-        c.real(b.real() + a.real() * b.imag() - (a.real() + a.imag()) * b.imag());
-        c.imag(b.real() + a.real() * b.imag() + (a.imag() - a.real()) * b.real());
+        // Compute intermediate values for better readability and efficiency
+        typename T_C::value_type term1 = a.real() * (b.real() - b.imag());
+        typename T_C::value_type term2 = b.imag() * (a.real() - a.imag());
+        typename T_C::value_type term3 = a.imag() * (b.real() + b.imag());
+
+        // Complex multiplication formula with three multiplicative operations
+        c.real(term1 + term2);
+        c.imag(term3 + term2);
+
         return c;
     }
 
     void computeFFTMagnitude(
         // Inputs
-        hls::stream<TR_INPUT_SIGNAL> &input_signal,
+        hls::stream<TI_INPUT_SIGNAL> &input_signal,
         TB &start,
         // Outputs
-        TR_FFT_NORM fft_magnitudes[N],
+        TC_FFT fft_output[N],
         TB &done)
     {
         done = 1;
@@ -121,9 +128,9 @@ public:
                 fprintf(stdout, "-------------BUTTERFLY CALCULATION PERFORMED-------------\n");
 
             FFT_MAGNITUDE_CALC:
-                for (int k = 0; k < N / 2; k++)
+                for (int k = 0; k < N; k++)
                 {
-                    fft_magnitudes[k] = TR_FFT_NORM(fft_result[k].real() * fft_result[k].real() + fft_result[k].imag() * fft_result[k].imag());
+                    fft_output[k] = fft_result[k];
                 }
                 fprintf(stdout, "-------------END-------------\n");
                 // fprintf(stdout, "done = %d\n", done);
@@ -137,11 +144,11 @@ public:
 
 private:
     TC_TWIDDLE_FACTOR twiddle_factors[N]; // Pre-computed twiddle factors
-    TR_INPUT_SIGNAL sample_array[N];
+    TI_INPUT_SIGNAL sample_array[N];
     TUI_SAMPLE_ARRAY_IDX bit_reversed_idx[N];
     TC_FFT fft_result_aux;
-    TC_FFT fft_result[N / 2];
-    TR_INPUT_SIGNAL input_signal_tmp;
+    TC_FFT fft_result[N];
+    TI_INPUT_SIGNAL input_signal_tmp;
     TB start;
     ap_uint<n_clog2_c + 1> sample_cnt;
 };
