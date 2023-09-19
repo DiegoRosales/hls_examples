@@ -70,3 +70,4 @@ __pycache__
 target*
 output
 *.tar.gz
+venv
