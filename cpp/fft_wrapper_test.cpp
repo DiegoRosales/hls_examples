@@ -29,20 +29,15 @@ int main()
         }
         fscanf(fp, "%d %d\n", &sample_idx, &input_signal_int);
         input_signal = TI_INPUT_SIGNAL(input_signal_int);
-        // fprintf(stdout, "input_signal_double[%d] = %lf = %lf\n", sample_idx, input_signal_double, input_signal.to_double());
-        // fprintf(stdout, "input_signal_fixed[%d] = %lf\n", sample_idx, input_signal.to_double());
         input_signal_stream.write(input_signal);
 
         fft_wrapper(input_signal_stream, start, fft_output, done);
-        // fprintf(stdout, "start = %d\n", start);
     }
 
     while (done == 0)
     {
         fft_wrapper(input_signal_stream, start, fft_output, done);
-        // fprintf(stdout, "done = %d\n", done);
     }
-    // fprintf(stdout, "start (end) = %d\n", start);
 
     fclose(fp); // Close the file
 

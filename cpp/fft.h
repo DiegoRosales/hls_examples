@@ -35,14 +35,13 @@ public:
     void reset()
     {
         sample_cnt = 0;
+        m = 0;
 
     // Initialize the twiddle factors and arrays
     INIT_TWIDDLE_FACTORS:
         for (int k = 0; k < N; k++)
         {
-            // fprintf(stdout, "twiddle_factor_double[%d] = %lf + i%lf\n", k, twiddle_factor_k.real(), twiddle_factor_k.imag());
             twiddle_factors[k] = computeTwiddleFactor(k);
-            // fprintf(stdout, "twiddle_factors_fixed[%d] = %lf + i%lf\n", k, twiddle_factors[k].real().to_double(), twiddle_factors[k].imag().to_double());
         }
     INIT_SAMPLE_ARRAY:
         for (int n = 0; n < N; n++)
@@ -53,7 +52,6 @@ public:
         for (int n = 0; n < N; n++)
         {
             bit_reversed_idx[n] = reverse_bits(TUI_SAMPLE_ARRAY_IDX(n));
-            // fprintf(stdout, "bit_reversed_idx[%d] = %d\n", n, bit_reversed_idx[n].to_int());
         }
     }
 
@@ -95,49 +93,47 @@ public:
                 }
                 sample_array[N - 1] = input_signal_tmp;
                 sample_cnt++;
-                // fprintf(stdout, "sample_cnt = %d\n", sample_cnt.to_int());
             }
 
-            if (sample_cnt == 1024)
+            if (sample_cnt == N)
             {
-                fprintf(stdout, "-------------STARTING CALCULATION-------------\n");
             INIT_FFT_RESULTS_ARRAY:
                 for (int n = 0; n < N; n++)
                 {
                     fft_result[n] = sample_array[bit_reversed_idx[n]];
                 }
-                fprintf(stdout, "-------------BIT REVERSED-------------\n");
 
-                // Butterfly computation
                 for (int s = 1; s <= n_clog2_c; s++)
                 {
-                    ap_uint<n_clog2_c + 1> m = 1 << s;
-                    for (int k = 0; k < N; k += m)
+                    for (int k = 0; k < N; k++)
                     {
-                        TC_TWIDDLE_FACTOR w = TC_TWIDDLE_FACTOR(1.0, 0.0);
-                        for (int j = 0; j < m / 2; j++)
+                        if (k == 0)
                         {
-                            TC_FFT t = comp_mult_three_dsp<TC_TWIDDLE_FACTOR, TC_FFT, TC_FFT>(w, fft_result[k + j + m / 2]);
-                            TC_FFT u = fft_result[k + j];
-                            fft_result[k + j] = u + t;
-                            fft_result[k + j + m / 2] = u - t;
-                            w = comp_mult_three_dsp<TC_TWIDDLE_FACTOR, TC_TWIDDLE_FACTOR, TC_TWIDDLE_FACTOR>(w, twiddle_factors[N / m]);
+                            m = 1 << s;
+                        }
+                        if (k % m == 0)
+                        {
+                            TC_TWIDDLE_FACTOR w = TC_TWIDDLE_FACTOR(1.0, 0.0);
+                            for (int j = 0; j < m / 2; j++)
+                            {
+                                TC_FFT t = comp_mult_three_dsp<TC_TWIDDLE_FACTOR, TC_FFT, TC_FFT>(w, fft_result[k + j + m / 2]);
+                                TC_FFT u = fft_result[k + j];
+                                fft_result[k + j] = u + t;
+                                fft_result[k + j + m / 2] = u - t;
+                                w = comp_mult_three_dsp<TC_TWIDDLE_FACTOR, TC_TWIDDLE_FACTOR, TC_TWIDDLE_FACTOR>(w, twiddle_factors[N / m]);
+                            }
                         }
                     }
                 }
-                fprintf(stdout, "-------------BUTTERFLY CALCULATION PERFORMED-------------\n");
 
             FFT_MAGNITUDE_CALC:
                 for (int k = 0; k < N; k++)
                 {
                     fft_output[k] = fft_result[k];
                 }
-                fprintf(stdout, "-------------END-------------\n");
-                // fprintf(stdout, "done = %d\n", done);
                 start = 0;
                 done = 1;
                 sample_cnt = 0;
-                // fprintf(stdout, "done = %d\n", done);
             }
         }
     }
@@ -151,4 +147,5 @@ private:
     TI_INPUT_SIGNAL input_signal_tmp;
     TB start;
     ap_uint<n_clog2_c + 1> sample_cnt;
+    ap_uint<n_clog2_c + 1> m;
 };
