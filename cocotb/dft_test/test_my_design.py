@@ -87,6 +87,14 @@ async def my_second_test(dut):
             dut._log.debug(f"REG[{ADDRESS:02x}] = 0x{result.integer:x}")
             return result.integer
 
+    async def write_reg(ADDRESS, DATA):
+        task = cocotb.start_soon(axim.write(ADDRESS, DATA))
+        timeout = Timer(CLK_PERIOD_NS * 20, units="ns")
+        result = await First(task, timeout)
+        if result is timeout:
+            dut._log.error("Timeout!")
+        return None
+
     dut._log.info("Starting testcase")
 
     ## AXI4-Lite interface
@@ -102,9 +110,11 @@ async def my_second_test(dut):
     await setup_dut(dut)
     start_time = get_sim_time(units="ns")
     dut._log.info(f"Start time = {start_time}ns")
-    for i in range(10):
+    await write_reg(0x0, 0x81)
+    for i in range(2):
         dut._log.info(f"Reading = {get_sim_time(units='ns')}ns")
         result = await read_reg(0)
+        dut._log.info(f"REG[0x0] = {hex(result)}")
         dut._log.info(f"Reading = {get_sim_time(units='ns')}ns")
     dut._log.info(f"End time = {get_sim_time(units='ns')}ns")
     dut._log.info(f"Duration = {get_sim_time(units='ns') - start_time}ns")
