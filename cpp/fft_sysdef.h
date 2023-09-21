@@ -1,8 +1,8 @@
 #pragma once
 #include "ap_fixed.h"
 
-static const int N = 1024;
-static const int n_clog2_c = 10;
+static const int N = 256;
+static const int n_clog2_c = 8;
 typedef ap_int<24> TI_INPUT_SIGNAL;
 typedef ap_fixed<32, 2> TR_TWIDDLE_FACTOR;
 typedef std::complex<TR_TWIDDLE_FACTOR> TC_TWIDDLE_FACTOR;

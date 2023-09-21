@@ -34,8 +34,12 @@ public:
     // Reset function
     void reset()
     {
-        sample_cnt = 0;
-        m = 0;
+
+    INIT_M_ARRAY:
+        for (int i = 0; i < n_clog2_c; i++)
+        {
+            m[i] = 1 << (i + 1);
+        }
 
     // Initialize the twiddle factors and arrays
     INIT_TWIDDLE_FACTORS:
@@ -58,94 +62,73 @@ public:
     template <class T_A, class T_B, class T_C>
     T_C comp_mult_three_dsp(const T_A &a, const T_B &b)
     {
-        T_C c;
-        // Compute intermediate values for better readability and efficiency
-        typename T_C::value_type term1 = a.real() * (b.real() - b.imag());
-        typename T_C::value_type term2 = b.imag() * (a.real() - a.imag());
-        typename T_C::value_type term3 = a.imag() * (b.real() + b.imag());
-
-        // Complex multiplication formula with three multiplicative operations
-        c.real(term1 + term2);
-        c.imag(term3 + term2);
-
-        return c;
+        return T_C((a.real() * (b.real() - b.imag()) + b.imag() * (a.real() - a.imag())),
+                   (a.imag() * (b.real() + b.imag()) + b.imag() * (a.real() - a.imag())));
     }
 
     void computeFFTMagnitude(
         // Inputs
         hls::stream<TI_INPUT_SIGNAL> &input_signal,
-        TB &start,
         // Outputs
-        TC_FFT fft_output[N],
-        TB &done)
+        TC_FFT fft_output[N])
     {
-        done = 1;
-        if (start)
+#pragma HLS ARRAY_PARTITION variable = twiddle_factors type = complete dim = 1
+#pragma HLS ARRAY_PARTITION variable = sample_array type = complete dim = 1
+#pragma HLS ARRAY_PARTITION variable = bit_reversed_idx type = complete dim = 1
+#pragma HLS ARRAY_PARTITION variable = fft_result type = complete dim = 1
+#pragma HLS ARRAY_PARTITION variable = m type = complete dim = 1
+        if (input_signal.read_nb(input_signal_tmp))
         {
-            done = 0;
-
-            if (input_signal.read_nb(input_signal_tmp))
+        SHIFT_REGISTER:
+            for (int n = 0; n < N - 1; n++)
             {
-            SHIFT_REGISTER:
-                for (int n = 0; n < N - 1; n++)
-                {
-                    sample_array[n] = sample_array[n + 1]; // Shift elements one position to the left
-                }
-                sample_array[N - 1] = input_signal_tmp;
-                sample_cnt++;
+                sample_array[n] = sample_array[n + 1]; // Shift elements one position to the left
             }
+            sample_array[N - 1] = input_signal_tmp;
+        }
 
-            if (sample_cnt == N)
+    INIT_FFT_RESULTS_ARRAY:
+        for (int n = 0; n < N; n++)
+        {
+            fft_result[n] = sample_array[bit_reversed_idx[n]];
+        }
+
+    BUTTERFLY_MULTIPLICATION_S:
+        for (int s = 0; s < n_clog2_c; s++)
+        {
+        BUTTERFLY_MULTIPLICATION_I:
+            for (int i = 0; i < N / m[s]; i++)
             {
-            INIT_FFT_RESULTS_ARRAY:
-                for (int n = 0; n < N; n++)
+                k = i * m[s];
+                w = TC_TWIDDLE_FACTOR(1.0, 0.0);
+            BUTTERFLY_MULTIPLICATION_J:
+                for (int j = 0; j < m[s] / 2; j++)
                 {
-                    fft_result[n] = sample_array[bit_reversed_idx[n]];
+                    t = comp_mult_three_dsp<TC_TWIDDLE_FACTOR, TC_FFT, TC_FFT>(w, fft_result[k + j + m[s] / 2]);
+                    u = fft_result[k + j];
+                    fft_result[k + j] = u + t;
+                    fft_result[k + j + m[s] / 2] = u - t;
+                    w = comp_mult_three_dsp<TC_TWIDDLE_FACTOR, TC_TWIDDLE_FACTOR, TC_TWIDDLE_FACTOR>(w, twiddle_factors[N / m[s]]);
                 }
-
-                for (int s = 1; s <= n_clog2_c; s++)
-                {
-                    for (int k = 0; k < N; k++)
-                    {
-                        if (k == 0)
-                        {
-                            m = 1 << s;
-                        }
-                        if (k % m == 0)
-                        {
-                            TC_TWIDDLE_FACTOR w = TC_TWIDDLE_FACTOR(1.0, 0.0);
-                            for (int j = 0; j < m / 2; j++)
-                            {
-                                TC_FFT t = comp_mult_three_dsp<TC_TWIDDLE_FACTOR, TC_FFT, TC_FFT>(w, fft_result[k + j + m / 2]);
-                                TC_FFT u = fft_result[k + j];
-                                fft_result[k + j] = u + t;
-                                fft_result[k + j + m / 2] = u - t;
-                                w = comp_mult_three_dsp<TC_TWIDDLE_FACTOR, TC_TWIDDLE_FACTOR, TC_TWIDDLE_FACTOR>(w, twiddle_factors[N / m]);
-                            }
-                        }
-                    }
-                }
-
-            FFT_MAGNITUDE_CALC:
-                for (int k = 0; k < N; k++)
-                {
-                    fft_output[k] = fft_result[k];
-                }
-                start = 0;
-                done = 1;
-                sample_cnt = 0;
             }
+        }
+
+    FFT_MAGNITUDE_CALC:
+        for (int k = 0; k < N; k++)
+        {
+            fft_output[k] = fft_result[k];
         }
     }
 
 private:
     TC_TWIDDLE_FACTOR twiddle_factors[N]; // Pre-computed twiddle factors
+    TC_TWIDDLE_FACTOR w;
     TI_INPUT_SIGNAL sample_array[N];
     TUI_SAMPLE_ARRAY_IDX bit_reversed_idx[N];
     TC_FFT fft_result_aux;
     TC_FFT fft_result[N];
+    TC_FFT t, u;
     TI_INPUT_SIGNAL input_signal_tmp;
-    TB start;
-    ap_uint<n_clog2_c + 1> sample_cnt;
-    ap_uint<n_clog2_c + 1> m;
+    ap_uint<n_clog2_c + 1> m[n_clog2_c];
+    ap_uint<n_clog2_c> k;
 };

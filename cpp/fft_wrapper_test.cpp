@@ -11,8 +11,6 @@ int main()
     TC_FFT fft_output[N];
     double fft_magnitud;
     int sample_idx;
-    TB start = 0;
-    TB done;
     // Read dat file
     fprintf(stdout, "START TEST\n");
     fprintf(stdout, "Reading data file\n");
@@ -23,21 +21,14 @@ int main()
 
     for (int i = 0; i < N; i++)
     {
-        if (i == 0)
-        {
-            start = 1;
-        }
         fscanf(fp, "%d %d\n", &sample_idx, &input_signal_int);
         input_signal = TI_INPUT_SIGNAL(input_signal_int);
         input_signal_stream.write(input_signal);
 
-        fft_wrapper(input_signal_stream, start, fft_output, done);
+        fft_wrapper(input_signal_stream, fft_output);
     }
 
-    while (done == 0)
-    {
-        fft_wrapper(input_signal_stream, start, fft_output, done);
-    }
+    fft_wrapper(input_signal_stream, fft_output);
 
     fclose(fp); // Close the file
 
