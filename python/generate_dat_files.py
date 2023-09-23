@@ -30,6 +30,17 @@ np.savetxt(
     comments="",
 )
 
+N =1024
+golden_data_file_path = "../dat/file_example_WAV_1MG_golden_data.dat"
+golden_data = np.abs(np.fft.fft(data_with_index[0:N,1]))
+np.savetxt(
+    golden_data_file_path,
+    golden_data,
+    fmt="%lf",
+    delimiter="\n",
+    comments="",
+)
+
 # %% Generate dat file for a 20 kHz sine wave
 N = 4096
 t = np.arange(N) / sample_rate
