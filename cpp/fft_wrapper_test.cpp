@@ -89,10 +89,12 @@ int main()
     if (rmse < 1.0)
     {
         fprintf(stdout, "PASS!\n\n");
+        return (0);
     }
     else
     {
         fprintf(stdout, "FAILED\n\n");
+        return (1);
     }
 
     return 0;
