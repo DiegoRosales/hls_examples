@@ -71,3 +71,4 @@ target*
 output
 *.tar.gz
 venv
+sim_build

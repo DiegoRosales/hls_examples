@@ -13,12 +13,13 @@ typedef ap_uint<1> TB;
 
 void dft_wrapper(
     // Inputs
-    hls::stream<TR_INPUT_SIGNAL> &input_signal,
+    hls::stream<TR_DFT_NORM> &input_signal,
     // Outputs
     TR_DFT_NORM dft_magnitudes[N / 2])
 {
     // This is just a placeholder to get the interfaces
-    for (int i = 0; i < (N / 2); i++) {
-        dft_magnitudes[i] = input_signal.read();
-    }
+    static int i = 0;
+    dft_magnitudes[i] = input_signal.read();
+    if (i < (N / 2)) i++;
+    else i = 0;
 }

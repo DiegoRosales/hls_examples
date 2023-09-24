@@ -1,4 +1,4 @@
 cocotb==1.8.0
-cocotb-bus==0.2.1
+cocotb-bus @ git+https://github.com/cocotb/cocotb-bus.git@2c846dca8d3293b7676c70dd51dbc9c7f51029f0
 cocotbext-axi==0.1.24
 find-libpython==0.3.0
