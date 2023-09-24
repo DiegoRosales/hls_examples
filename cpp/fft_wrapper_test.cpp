@@ -37,7 +37,8 @@ double calculatePercentRMS(double predicted[N], double actual[N])
 
 int main()
 {
-    TI_INPUT_SIGNAL input_signal[N];
+    hls::stream<TI_INPUT_SIGNAL> input_signal_stream;
+    TI_INPUT_SIGNAL input_signal;
     int input_signal_int;
     TC_FFT fft_output[N];
     double fft_magnitud[N];
@@ -60,12 +61,12 @@ int main()
     for (int i = 0; i < N; i++)
     {
         fscanf(fp, "%d %d\n", &sample_idx, &input_signal_int);
-        input_signal[i] = TI_INPUT_SIGNAL(input_signal_int);
+        input_signal = TI_INPUT_SIGNAL(input_signal_int);
+        input_signal_stream.write(input_signal);
+        fft_wrapper(input_signal_stream, fft_output);
     }
 
     fclose(fp); // Close the file
-
-    fft_wrapper(input_signal, fft_output);
 
     fp_generated = fopen("E:/git/hls_examples/dat/generated_data.dat", "w");
     fp_golden = fopen("E:/git/hls_examples/dat/file_example_WAV_1MG_golden_data.dat", "r");

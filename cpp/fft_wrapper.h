@@ -5,6 +5,6 @@
 
 void fft_wrapper(
     // Inputs
-    TI_INPUT_SIGNAL input_signal[N],
+    hls::stream<TI_INPUT_SIGNAL> &input_signal,
     // Outputs
     TC_FFT fft_output[N]);

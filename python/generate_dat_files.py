@@ -30,7 +30,7 @@ np.savetxt(
     comments="",
 )
 
-N =1024
+N =256
 golden_data_file_path = "../dat/file_example_WAV_1MG_golden_data.dat"
 golden_data = np.abs(np.fft.fft(data_with_index[0:N,1]))
 np.savetxt(

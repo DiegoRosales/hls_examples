@@ -2,3 +2,5 @@ hls/**/vitis_project/
 settings.json
 dat/*.dat
 *.log
+.idea/
+.vscode/
