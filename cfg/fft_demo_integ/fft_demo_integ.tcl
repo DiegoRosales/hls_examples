@@ -9,7 +9,7 @@ set project_dir          $integ_project_dir
 set project_top          $integ_project_top
 set ip_repo_list         [list  ${packaged_cores_dirname} \
                                 ${user_interfaces_dir} \
-                                ./hls/dft_wrapper/hls_project/solution_1/impl/ip \
+                                ./hls/fft_wrapper/hls_project/solution_1/impl/ip \
                                 ]
 set bus_definition_list  [list ${vivado_interface_path}/gpio_v1_0/gpio.xml           \
                                ${vivado_interface_path}/axis_v1_0/axis.xml           \
@@ -31,7 +31,7 @@ if {[file exists $project_dir]} {
 }
 create_project $project_name $project_dir -part $FPGA_PART_NUMBER -force
 
-set_property ip_repo_paths [list ./target/packaged_cores ./board_files/interfaces ./hls/dft_wrapper/hls_project/solution_1/impl/ip] [current_project]
+set_property ip_repo_paths [list ./target/packaged_cores ./board_files/interfaces ./hls/fft_wrapper/hls_project/solution_1/impl/ip] [current_project]
 
 integ_utils::load_bus_def $bus_definition_list
 

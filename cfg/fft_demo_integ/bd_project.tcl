@@ -123,7 +123,7 @@ set bCheckIPs 1
 if { $bCheckIPs == 1 } {
    set list_check_ips "\ 
 xilinx.com:ip:axi_gpio:2.0\
-xilinx.com:hls:dft_wrapper:1.0\
+xilinx.com:hls:fft_wrapper:1.0\
 fft_demo:user:codec_unit_top:1.0\
 xilinx.com:ip:xlconstant:1.1\
 xilinx.com:ip:processing_system7:5.5\
@@ -658,18 +658,18 @@ proc create_root_design { parentCell } {
   # Create instance: zynq_cpu
   create_hier_cell_zynq_cpu [current_bd_instance .] zynq_cpu
 
-  # Create instance: dft_wrapper_0, and set properties
-  set dft_wrapper_0 [ create_bd_cell -type ip -vlnv xilinx.com:hls:dft_wrapper:1.0 dft_wrapper_0 ]
+  # Create instance: fft_wrapper_0, and set properties
+  set fft_wrapper_0 [ create_bd_cell -type ip -vlnv xilinx.com:hls:fft_wrapper:1.0 fft_wrapper_0 ]
 
   # Create interface connections
   connect_bd_intf_net -intf_net axi_gpio_0_GPIO [get_bd_intf_ports SW] [get_bd_intf_pins axi_gpio_0/GPIO]
   connect_bd_intf_net -intf_net axi_gpio_0_GPIO2 [get_bd_intf_ports BTN] [get_bd_intf_pins axi_gpio_0/GPIO2]
   connect_bd_intf_net -intf_net sampler_LED [get_bd_intf_ports LED] [get_bd_intf_pins sampler/LED]
-  connect_bd_intf_net -intf_net sampler_axis_interface_master [get_bd_intf_pins dft_wrapper_0/input_signal] [get_bd_intf_pins sampler/axis_interface_master]
+  connect_bd_intf_net -intf_net sampler_axis_interface_master [get_bd_intf_pins fft_wrapper_0/input_signal] [get_bd_intf_pins sampler/axis_interface_master]
   connect_bd_intf_net -intf_net sampler_codec_i2s [get_bd_intf_ports codec_i2s] [get_bd_intf_pins sampler/codec_i2s]
   connect_bd_intf_net -intf_net zynq_cpu_DDR [get_bd_intf_ports DDR] [get_bd_intf_pins zynq_cpu/DDR]
   connect_bd_intf_net -intf_net zynq_cpu_FIXED_IO [get_bd_intf_ports FIXED_IO] [get_bd_intf_pins zynq_cpu/FIXED_IO]
-  connect_bd_intf_net -intf_net zynq_cpu_M00_AXI [get_bd_intf_pins dft_wrapper_0/s_axi_dft_wrapper] [get_bd_intf_pins zynq_cpu/M00_AXI]
+  connect_bd_intf_net -intf_net zynq_cpu_M00_AXI [get_bd_intf_pins fft_wrapper_0/s_axi_fft_wrapper] [get_bd_intf_pins zynq_cpu/M00_AXI]
   connect_bd_intf_net -intf_net zynq_cpu_M01_AXI [get_bd_intf_pins zynq_cpu/M01_AXI] [get_bd_intf_pins sampler/axi4_lite_interface]
   connect_bd_intf_net -intf_net zynq_cpu_M02_AXI [get_bd_intf_pins axi_gpio_0/S_AXI] [get_bd_intf_pins zynq_cpu/M02_AXI]
 
@@ -679,13 +679,13 @@ proc create_root_design { parentCell } {
   connect_bd_net -net Net1 [get_bd_ports i2c_sda] [get_bd_pins sampler/i2c_sda]
   connect_bd_net -net axi_gpio_0_ip2intc_irpt [get_bd_pins axi_gpio_0/ip2intc_irpt] [get_bd_pins zynq_cpu/In0]
   connect_bd_net -net board_clk_1 [get_bd_ports board_clk] [get_bd_pins sampler/board_clk]
-  connect_bd_net -net zynq_cpu_FCLK_CLK0 [get_bd_pins zynq_cpu/FCLK_CLK0] [get_bd_pins sampler/axi_clk] [get_bd_pins axi_gpio_0/s_axi_aclk] [get_bd_pins dft_wrapper_0/ap_clk]
-  connect_bd_net -net zynq_cpu_peripheral_aresetn [get_bd_pins zynq_cpu/peripheral_aresetn] [get_bd_pins sampler/s00_axi_aresetn] [get_bd_pins axi_gpio_0/s_axi_aresetn] [get_bd_pins dft_wrapper_0/ap_rst_n]
+  connect_bd_net -net zynq_cpu_FCLK_CLK0 [get_bd_pins zynq_cpu/FCLK_CLK0] [get_bd_pins sampler/axi_clk] [get_bd_pins axi_gpio_0/s_axi_aclk] [get_bd_pins fft_wrapper_0/ap_clk]
+  connect_bd_net -net zynq_cpu_peripheral_aresetn [get_bd_pins zynq_cpu/peripheral_aresetn] [get_bd_pins sampler/s00_axi_aresetn] [get_bd_pins axi_gpio_0/s_axi_aresetn] [get_bd_pins fft_wrapper_0/ap_rst_n]
 
   # Create address segments
   assign_bd_address -offset 0x41200000 -range 0x00010000 -target_address_space [get_bd_addr_spaces zynq_cpu/zynq/Data] [get_bd_addr_segs axi_gpio_0/S_AXI/Reg] -force
   assign_bd_address -offset 0x43C00000 -range 0x00010000 -target_address_space [get_bd_addr_spaces zynq_cpu/zynq/Data] [get_bd_addr_segs sampler/codec_controller/axi4_lite_interface_memory_map/codec_controller_regmap] -force
-  assign_bd_address -offset 0x40000000 -range 0x00010000 -target_address_space [get_bd_addr_spaces zynq_cpu/zynq/Data] [get_bd_addr_segs dft_wrapper_0/s_axi_dft_wrapper/Reg] -force
+  assign_bd_address -offset 0x40000000 -range 0x00010000 -target_address_space [get_bd_addr_spaces zynq_cpu/zynq/Data] [get_bd_addr_segs fft_wrapper_0/s_axi_fft_wrapper/Reg] -force
 
 
   # Restore current instance
