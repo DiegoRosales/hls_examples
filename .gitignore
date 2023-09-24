@@ -72,3 +72,4 @@ output
 *.tar.gz
 venv
 sim_build
+hls_project

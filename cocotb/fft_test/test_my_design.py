@@ -134,6 +134,7 @@ async def test_fft(dut):
         dut._log.error(f"DUT hasn't started! Result is {hex(result)}")
     else:
         dut._log.info(f"DUT has started! Result is {hex(result)}")
+        await Timer(CLK_PERIOD_NS*100, units='ns')
         dut._log.info(f"----------------------------------------")
 
         
@@ -141,7 +142,7 @@ async def test_fft(dut):
 
     golden_data = []
 
-    for i in range(1, 11):
+    for i in range(1, 2000):
         data = fixed_to_int(1.0/i, 16)
         golden_data.append(data)
         dut._log.info(f"Sending {1.0/i} as {data}")
@@ -152,7 +153,11 @@ async def test_fft(dut):
         if res == timeout:
             dut._log.error("ERROR - There was a timeout while waiting for the streams to complete")
         else:
-            await Timer(CLK_PERIOD_NS, units='ns')
+            await Timer(CLK_PERIOD_NS*5, units='ns')
+        if (dut.input_signal_TREADY.value.integer == 0):
+            dut._log.info("TREADY = 0")
+            break
+    await Timer(CLK_PERIOD_NS*1000, units='ns')
     for i in range(10):
         result = await read_reg(0x2000 + 4*i)
         dut._log.info(int_to_fixed(result, 16))
