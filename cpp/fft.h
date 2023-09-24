@@ -91,7 +91,7 @@ public:
         // Outputs
         TC_FFT fft_output[N])
     {
-        
+
     INIT_FIRST_STAGE:
         for (int n = 0; n < N; n++)
         {
