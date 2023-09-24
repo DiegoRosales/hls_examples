@@ -143,7 +143,7 @@ plt.title("FFT Radix-2")
 plt.show()
 
 # %% Read C-Sim output and compare errors with golden input
-N = 1024
+N = 256
 sample_rate = 44100
 input_signal = np.loadtxt('E:/git/hls_examples/dat/file_example_WAV_1MG.dat', usecols=(1,))
 fft_result = np.abs(np.fft.fft(input_signal[0:N]))

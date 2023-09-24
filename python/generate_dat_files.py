@@ -12,7 +12,7 @@ sample_rate, audio_data = wavfile.read(wav_path)
 
 # If audio_data is a stereo array (2D), split it into left and right channels
 if len(audio_data.shape) == 2:
-    mono_channel = (audio_data[:, 0] + audio_data[:, 1])
+    mono_channel = audio_data[:, 0] + audio_data[:, 1]
 else:
     mono_channel = audio_data  # Handle mono audio as well
 
@@ -30,9 +30,9 @@ np.savetxt(
     comments="",
 )
 
-N =256
+N = 256
 golden_data_file_path = "../dat/file_example_WAV_1MG_golden_data.dat"
-golden_data = np.abs(np.fft.fft(data_with_index[0:N,1]))
+golden_data = np.abs(np.fft.fft(data_with_index[0:N, 1]))
 np.savetxt(
     golden_data_file_path,
     golden_data,

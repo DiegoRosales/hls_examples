@@ -12,3 +12,4 @@ typedef std::complex<TR_TWIDDLE_FACTOR> TC_TWIDDLE_FACTOR;
 typedef ap_fixed<32, 24> TR_FFT;
 typedef std::complex<TR_FFT> TC_FFT;
 typedef ap_uint<n_clog2_c> TUI_SAMPLE_ARRAY_IDX;
+typedef ap_uint<1> TB;

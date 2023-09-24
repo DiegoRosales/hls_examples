@@ -66,6 +66,8 @@ int main()
         fft_wrapper(input_signal_stream, fft_output);
     }
 
+    fft_wrapper(input_signal_stream, fft_output);
+
     fclose(fp); // Close the file
 
     fp_generated = fopen("E:/git/hls_examples/dat/generated_data.dat", "w");
