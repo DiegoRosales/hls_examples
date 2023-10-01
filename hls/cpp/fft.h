@@ -8,8 +8,7 @@ class fft
 {
 public:
     TC_TWIDDLE_FACTOR twiddle_factors[N / 2]; // Pre-computed twiddle factors
-    TI_INPUT_SIGNAL sample_array[N];
-    TI_INPUT_SIGNAL sample_array_reordered[N];
+
     TUI_SAMPLE_ARRAY_IDX bit_reversed_idx[N];
     TC_FFT fft_stage_input[N];
     TC_FFT fft_stage_output[N];
@@ -66,16 +65,6 @@ public:
                    (a.imag() * (b.real() + b.imag()) + b.imag() * (a.real() - a.imag())));
     }
 
-    template <class T>
-    void ArrayReorder(T data_in[N], T data_out[N])
-    {
-    ARRAY_REORDER_LOOP:
-        for (int n = 0; n < N; n++)
-        {
-            data_out[n] = data_in[bit_reversed_idx[n]];
-        }
-    }
-
     template <class T_IN, class T_OUT>
     void ButterflyOperator(T_IN data_in[N], T_OUT data_out[N], int fft_stage_num)
     {
@@ -96,29 +85,17 @@ public:
         }
     }
 
-    void computeFFTMagnitude(
+    void doFFT(
         // Inputs
-        hls::stream<TI_INPUT_SIGNAL> &input_signal,
+        TI_INPUT_SIGNAL input_reordered[N],
         // Outputs
         TC_FFT fft_output[N])
     {
-        TI_INPUT_SIGNAL input_signal_tmp;
-
-        input_signal.read(input_signal_tmp);
-
-    SHIFT_REGISTER:
-        for (int n = 0; n < N - 1; n++)
-        {
-            sample_array[n] = sample_array[n + 1]; // Shift elements one position to the left
-        }
-        sample_array[N - 1] = input_signal_tmp;
-
-        ArrayReorder<TI_INPUT_SIGNAL>(sample_array, sample_array_reordered);
-
+        
     INIT_FIRST_STAGE:
         for (int n = 0; n < N; n++)
         {
-            fft_stage_output[n] = TC_FFT(sample_array_reordered[n], 0);
+            fft_stage_output[n] = TC_FFT(input_reordered[n], 0);
         }
 
     BUTTERFLY_OPERATOR_LOOP:
