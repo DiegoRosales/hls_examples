@@ -66,22 +66,23 @@ public:
     }
 
     template <class T_IN, class T_OUT>
-    void ButterflyOperator(T_IN data_in[N], T_OUT data_out[N], int fft_stage_num)
+    void ButterflyOperator(T_IN data_in[N], T_OUT data_out[N], ap_uint<n_clog2_c + 1> curr_m)
     {
+        #pragma HLS inline
         int j;
         int k;
         TC_FFT product;
     BUTTERFLY_MULTIPLICATION:
         for (int i = 0; i < N / 2; i++)
         {
-            j = i % (m[fft_stage_num] / 2);
+            j = i % (curr_m / 2);
             if (j == 0)
             {
                 k = i * 2;
             }
-            product = comp_mult_three_dsp<TC_TWIDDLE_FACTOR, TC_FFT, TC_FFT>(twiddle_factors[j * N / m[fft_stage_num]], data_in[k + j + m[fft_stage_num] / 2]);
+            product = comp_mult_three_dsp<TC_TWIDDLE_FACTOR, TC_FFT, TC_FFT>(twiddle_factors[j * N / curr_m], data_in[k + j + curr_m / 2]);
             data_out[k + j] = data_in[k + j] + product;
-            data_out[k + j + m[fft_stage_num] / 2] = data_in[k + j] - product;
+            data_out[k + j + curr_m / 2] = data_in[k + j] - product;
         }
     }
 
@@ -106,7 +107,7 @@ public:
             {
                 fft_stage_input[i] = fft_stage_output[i];
             }
-            ButterflyOperator<TC_FFT, TC_FFT>(fft_stage_input, fft_stage_output, s);
+            ButterflyOperator<TC_FFT, TC_FFT>(fft_stage_input, fft_stage_output, m[s]);
         }
 
     OUTPUT_MAPPING_LOOP:

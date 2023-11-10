@@ -200,8 +200,9 @@ async def test_fft(dut):
         while (dut.input_signal_TREADY.value.integer == 0):
             await Timer(CLK_PERIOD_NS, units='ns')
 
-    dut._log.info(f"Waiting {CLK_PERIOD_NS*3000}ns")
-    await Timer(CLK_PERIOD_NS*3000, units='ns')
+    wait_time = 6000
+    dut._log.info(f"Waiting {CLK_PERIOD_NS*wait_time}ns")
+    await Timer(CLK_PERIOD_NS*wait_time, units='ns')
     # %% Read FFT values through AXI-Lite interface
     dut._log.info(f"Reading FFT results")
     real_values = []
