@@ -74,6 +74,10 @@ public:
     BUTTERFLY_MULTIPLICATION:
         for (int i = 0; i < N / 2; i++)
         {
+#pragma HLS dependence variable = data_in type = inter false
+#pragma HLS dependence variable = data_in type = intra false
+#pragma HLS dependence variable = data_out type = inter false
+#pragma HLS dependence variable = data_out type = intra false
             j = i % (m[fft_stage_num] / 2);
             if (j == 0)
             {
@@ -87,32 +91,37 @@ public:
 
     void doFFT(
         // Inputs
-        TI_INPUT_SIGNAL input_reordered[N],
+        TC_FFT fft_input[N],
         // Outputs
         TC_FFT fft_output[N])
     {
-
-    INIT_FIRST_STAGE:
-        for (int n = 0; n < N; n++)
-        {
-            fft_stage_output[n] = TC_FFT(input_reordered[n], 0);
-        }
+        // Calculate first stage
+        ButterflyOperator<TC_FFT, TC_FFT>(fft_input, fft_stage_output, 0);
 
     BUTTERFLY_OPERATOR_LOOP:
-        for (int s = 0; s < n_clog2_c; s++)
+        for (int s = 1; s < n_clog2_c; s++)
         {
-        BUTTERFLY_OPERATOR_ASSIGN_INPUT:
-            for (int i = 0; i < N; i++)
+            if (s % 2 == 0)
             {
-                fft_stage_input[i] = fft_stage_output[i];
+                ButterflyOperator<TC_FFT, TC_FFT>(fft_stage_input, fft_stage_output, s);
             }
-            ButterflyOperator<TC_FFT, TC_FFT>(fft_stage_input, fft_stage_output, s);
+            else
+            {
+                ButterflyOperator<TC_FFT, TC_FFT>(fft_stage_output, fft_stage_input, s);
+            }
         }
 
     OUTPUT_MAPPING_LOOP:
         for (int k = 0; k < N; k++)
         {
-            fft_output[k] = fft_stage_output[k];
+            if (n_clog2_c % 2 == 0)
+            {
+                fft_output[k] = fft_stage_input[k];
+            }
+            else
+            {
+                fft_output[k] = fft_stage_output[k];
+            }
         }
     }
 };
