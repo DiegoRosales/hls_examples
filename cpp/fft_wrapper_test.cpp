@@ -39,10 +39,11 @@ int main()
 {
     hls::stream<TI_INPUT_SIGNAL> input_signal_stream;
     TI_INPUT_SIGNAL input_signal;
-    int input_signal_int;
-    TC_FFT fft_output[N];
-    double fft_magnitud[N];
-    double fft_predicted[N];
+    int input_signal_int_temp;
+    int input_signal_int[N];
+    TC_FFT fft_output[n_instances_c * 2][N];
+    double fft_magnitud[n_instances_c * 2][N];
+    double fft_predicted[n_instances_c * 2][N];
     int sample_idx;
     double rmse;
     double fft_predicted_tmp;
@@ -60,45 +61,62 @@ int main()
 
     for (int i = 0; i < N; i++)
     {
-        fscanf(fp, "%d %d\n", &sample_idx, &input_signal_int);
-        input_signal = TI_INPUT_SIGNAL(input_signal_int);
-        input_signal_stream.write(input_signal);
-        fft_wrapper(input_signal_stream, fft_output);
+        fscanf(fp, "%d %d\n", &sample_idx, &input_signal_int_temp);
+        input_signal_int[i] = input_signal_int_temp;
     }
 
-    fft_wrapper(input_signal_stream, fft_output);
+    for (int i = 0; i < N * 8; i++)
+    {
+        input_signal = TI_INPUT_SIGNAL(input_signal_int[i % N]);
+        input_signal_stream.write(input_signal);
+        fft_wrapper(input_signal_stream, fft_output[i / N]);
+    }
 
     fclose(fp); // Close the file
 
     fp_generated = fopen("E:/git/hls_examples/dat/generated_data.dat", "w");
     fp_golden = fopen("E:/git/hls_examples/dat/file_example_WAV_1MG_golden_data.dat", "r");
-    for (int i = 0; i < N; i++)
+    for (int j = 0; j < n_instances_c * 2; j++)
     {
-        fscanf(fp_golden, "%lf\n", &fft_predicted_tmp);
-        fft_predicted[i] = fft_predicted_tmp;
-        fft_magnitud[i] = abs(fft_output[i]);
-        fprintf(fp_generated, "%d %lf\n", i, fft_magnitud[i]);
+        for (int i = 0; i < N; i++)
+        {
+            fscanf(fp_golden, "%lf\n", &fft_predicted_tmp);
+            fft_predicted[j][i] = fft_predicted_tmp;
+            fft_magnitud[j][i] = abs(fft_output[j][i]);
+            fprintf(fp_generated, "%lf\n", fft_magnitud[j][i]);
+        }
     }
 
     fclose(fp_generated); // Close the file
     fclose(fp_golden);
 
-    fprintf(stdout, "Calculating RMS%\n\n");
-    rmse = calculatePercentRMS(fft_predicted, fft_magnitud);
-    fprintf(stdout, "RMS% = %lf%%\n\n", rmse);
+    int error_cnt = 0;
 
-    double tolerance;
-
-    if (rmse < 1.0)
+    for (int i = 0; i < n_instances_c * 2; i++)
     {
-        fprintf(stdout, "PASS!\n\n");
-        return (0);
+        fprintf(stdout, "Calculating RMS for stage %d\n\n", i);
+        rmse = calculatePercentRMS(fft_predicted[0], fft_magnitud[i]);
+        fprintf(stdout, "RMS% = %lf\n\n", rmse);
+
+        double tolerance;
+
+        if (rmse < 1.0)
+        {
+            fprintf(stdout, "PASS!\n\n");
+        }
+        else
+        {
+            fprintf(stdout, "FAILED\n\n");
+            error_cnt++;
+        }
+    }
+
+    if (error_cnt == 0)
+    {
+        return 0;
     }
     else
     {
-        fprintf(stdout, "FAILED\n\n");
-        return (1);
+        return 1;
     }
-
-    return 0;
 }

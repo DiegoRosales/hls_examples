@@ -13,6 +13,7 @@ public:
     TC_FFT fft_stage_input[N];
     TC_FFT fft_stage_output[N];
     ap_uint<n_clog2_c + 1> m[n_clog2_c];
+    TB done;
 
     // Constructor
     fft(void)
@@ -38,6 +39,7 @@ public:
     // Reset function
     void reset()
     {
+        done = 0;
 
     INIT_M_ARRAY:
         for (int i = 0; i < n_clog2_c; i++)
@@ -95,6 +97,7 @@ public:
         // Outputs
         TC_FFT fft_output[N])
     {
+        done = 0;
         // Calculate first stage
         ButterflyOperator<TC_FFT, TC_FFT>(fft_input, fft_stage_output, 0);
 
@@ -123,5 +126,6 @@ public:
                 fft_output[k] = fft_stage_output[k];
             }
         }
+        done = 1;
     }
 };

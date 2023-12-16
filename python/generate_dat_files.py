@@ -32,7 +32,13 @@ np.savetxt(
 
 N = 256
 golden_data_file_path = "../dat/file_example_WAV_1MG_golden_data.dat"
-golden_data = np.abs(np.fft.fft(data_with_index[0:N, 1]))
+golden_data = []
+
+for i in range(8):
+    print(f"data_with_index[{N * i} : {N * (i + 1)}, 1]")
+    golden_data.append(np.abs(np.fft.fft(data_with_index[N * i : N * (i + 1), 1])))
+
+
 np.savetxt(
     golden_data_file_path,
     golden_data,
