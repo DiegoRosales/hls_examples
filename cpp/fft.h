@@ -8,11 +8,10 @@ class fft
 {
 public:
     TC_TWIDDLE_FACTOR twiddle_factors[N / 2]; // Pre-computed twiddle factors
-
-    TUI_SAMPLE_ARRAY_IDX bit_reversed_idx[N];
     TC_FFT fft_stage_input[N];
     TC_FFT fft_stage_output[N];
     ap_uint<n_clog2_c + 1> m[n_clog2_c];
+    TB valid;
 
     // Constructor
     fft(void)
@@ -30,14 +29,10 @@ public:
         return TC_TWIDDLE_FACTOR(cos(angle), sin(angle));
     }
 
-    TUI_SAMPLE_ARRAY_IDX reverse_bits(TUI_SAMPLE_ARRAY_IDX index)
-    {
-        return index.range(0, n_clog2_c - 1);
-    }
-
     // Reset function
     void reset()
     {
+        valid = 0;
 
     INIT_M_ARRAY:
         for (int i = 0; i < n_clog2_c; i++)
@@ -50,11 +45,6 @@ public:
         for (int k = 0; k < N / 2; k++)
         {
             twiddle_factors[k] = computeTwiddleFactor(k);
-        }
-    INIT_BIT_REVERSED_INDEXES:
-        for (int n = 0; n < N; n++)
-        {
-            bit_reversed_idx[n] = reverse_bits(TUI_SAMPLE_ARRAY_IDX(n));
         }
     }
 
@@ -114,6 +104,7 @@ public:
     OUTPUT_MAPPING_LOOP:
         for (int k = 0; k < N; k++)
         {
+            valid = 0;
             if (n_clog2_c % 2 == 0)
             {
                 fft_output[k] = fft_stage_input[k];
@@ -122,6 +113,7 @@ public:
             {
                 fft_output[k] = fft_stage_output[k];
             }
+            valid = 1;
         }
     }
 };
