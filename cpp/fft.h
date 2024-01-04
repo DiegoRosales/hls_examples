@@ -11,7 +11,7 @@ public:
     TC_FFT fft_stage_input[N];
     TC_FFT fft_stage_output[N];
     ap_uint<n_clog2_c + 1> m[n_clog2_c];
-    TB valid;
+    TB done;
 
     // Constructor
     fft(void)
@@ -32,7 +32,7 @@ public:
     // Reset function
     void reset()
     {
-        valid = 0;
+        done = 0;
 
     INIT_M_ARRAY:
         for (int i = 0; i < n_clog2_c; i++)
@@ -64,10 +64,6 @@ public:
     BUTTERFLY_MULTIPLICATION:
         for (int i = 0; i < N / 2; i++)
         {
-#pragma HLS dependence variable = data_in type = inter false
-#pragma HLS dependence variable = data_in type = intra false
-#pragma HLS dependence variable = data_out type = inter false
-#pragma HLS dependence variable = data_out type = intra false
             j = i % (m[fft_stage_num] / 2);
             if (j == 0)
             {
@@ -104,7 +100,6 @@ public:
     OUTPUT_MAPPING_LOOP:
         for (int k = 0; k < N; k++)
         {
-            valid = 0;
             if (n_clog2_c % 2 == 0)
             {
                 fft_output[k] = fft_stage_input[k];
@@ -113,7 +108,7 @@ public:
             {
                 fft_output[k] = fft_stage_output[k];
             }
-            valid = 1;
+            done = 1;
         }
     }
 };

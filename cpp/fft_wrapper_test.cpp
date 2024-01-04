@@ -2,38 +2,10 @@
 #include <cstdlib>
 #include <cmath>
 #include "fft_sysdef.h"
+#include "fft_test_sysdef.h"
 #include "fft_wrapper.h"
 
 using namespace std;
-
-double abs(TC_FFT data)
-{
-    return (sqrt(pow(data.real().to_double(), 2) + pow(data.imag().to_double(), 2)));
-}
-
-double calculatePercentRMS(double predicted[N], double actual[N])
-{
-
-    double mse = 0.0;
-    double rms = 0.0;
-    double mean = 0.0;
-
-    for (size_t i = 0; i < N; i++)
-    {
-        mse += pow(predicted[i] - actual[i], 2);
-        mean += actual[i];
-    }
-
-    mse /= N;  // Calculate the mean squared error
-    mean /= N; // Calculate the mean
-
-    rms = sqrt(mse); // Calculate the square root to get the RMSE
-
-    // Calculate the range of the data
-
-    double percentRMS = (rms / mean) * 100.0; // Calculate Percent RMS
-    return percentRMS;
-}
 
 int main()
 {
@@ -79,7 +51,7 @@ int main()
     {
         fscanf(fp_golden, "%lf\n", &fft_predicted_tmp);
         fft_predicted[i] = fft_predicted_tmp;
-        fft_magnitud[i] = abs(fft_output[i]);
+        fft_magnitud[i] = abs<TC_FFT>(fft_output[i]);
         fprintf(fp_generated, "%d %lf\n", i, fft_magnitud[i]);
     }
 
@@ -87,7 +59,7 @@ int main()
     fclose(fp_golden);
 
     fprintf(stdout, "Calculating RMS%\n\n");
-    rmse = calculatePercentRMS(fft_predicted, fft_magnitud);
+    rmse = calculatePercentRMS<N>(fft_predicted, fft_magnitud);
     fprintf(stdout, "RMS% = %lf%%\n\n", rmse);
 
     double tolerance;

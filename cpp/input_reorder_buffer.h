@@ -2,16 +2,16 @@
 #include "fft_sysdef.h"
 #include "hls_stream.h"
 
-template <int N, int n_clog2_c>
+template <int N, int n_clog2_c, int n_instances_c>
 class input_reorder_buffer
 {
 private:
     TUI_SAMPLE_ARRAY_IDX sample_count;
-    TI_INPUT_SIGNAL sample_in;
+    TUI_SAMPLE_ARRAY_IDX idx_reordered;
 
 public:
-    TC_FFT fft_input[N];
-    TB buffer_full;
+    TC_FFT fft_input[n_instances_c][N];
+    TB buffer_full[n_instances_c];
 
     // Constructor
     input_reorder_buffer(void)
@@ -24,25 +24,26 @@ public:
 
     void reset()
     {
-        buffer_full = 0;
         sample_count = 0;
+        for (int i = 0; i < n_instances_c; i++)
+        {
+            buffer_full[i] = 0;
+        }
     }
 
     void store_sample(
         // Inputs
-        hls::stream<TI_INPUT_SIGNAL> &input_signal)
+        TI_INPUT_SIGNAL sample_in)
     {
-        if (input_signal.read_nb(sample_in))
+        idx_reordered = TUI_SAMPLE_ARRAY_IDX(sample_count % N).range(0, n_clog2_c - 1);
+        fft_input[sample_count / N][idx_reordered] = TC_FFT(sample_in, 0);
+        if (sample_count % N == N - 1)
         {
-            fft_input[sample_count.range(0, n_clog2_c - 1)] = TC_FFT(sample_in, 0);
-            if (sample_count == N - 1)
-            {
-                buffer_full = 1;
-            }
-            else
-            {
-                sample_count++;
-            }
+            buffer_full[sample_count / N] = 1;
+        }
+        else
+        {
+            sample_count++;
         }
     }
 };

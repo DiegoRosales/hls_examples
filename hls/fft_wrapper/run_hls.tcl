@@ -10,7 +10,7 @@ add_files ../../cpp/fft_wrapper.cpp
 add_files -tb ../../cpp/fft_wrapper_test.cpp -cflags "-Wno-unknown-pragmas"
 add_files -tb ../../dat/file_example_WAV_1MG.dat -cflags "-Wno-unknown-pragmas"
 open_solution "solution1" -flow_target vivado
-set_part {xc7z010-clg400-1}
+set_part {xc7z020-clg400-1}
 create_clock -period 10 -name default
 config_cosim -tool xsim
 source "./directives.tcl"
