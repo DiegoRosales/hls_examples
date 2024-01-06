@@ -13,7 +13,6 @@ int main()
     TI_INPUT_SIGNAL input_signal;
     int input_signal_int;
     TC_FFT fft_output[N];
-    TB valid = 0;
     double fft_magnitud[N];
     double fft_predicted[N];
     int sample_idx;
@@ -32,18 +31,20 @@ int main()
     // fp = fopen("E:/git/hls_examples/dat/sin20khz.dat", "r");
     // fp = fopen("E:/git/hls_examples/dat/sin1khz.dat", "r");
 
-    while (valid.to_int() == 0)
+    for (int i = 0; i < N; i++)
     {
         fscanf(fp, "%d %d\n", &sample_idx, &input_signal_int);
         input_signal = TI_INPUT_SIGNAL(input_signal_int);
         input_signal_stream.write(input_signal);
-        fft_wrapper(input_signal_stream, fft_output, valid);
+        fft_wrapper(input_signal_stream, fft_output);
         samples_counter++;
     }
 
     fclose(fp); // Close the file
 
     fprintf(stdout, "INFO: %d samples sent\n", samples_counter);
+
+    fft_wrapper(input_signal_stream, fft_output);
 
     fp_generated = fopen("E:/git/hls_examples/dat/generated_data.dat", "w");
     fp_golden = fopen("E:/git/hls_examples/dat/file_example_WAV_1MG_golden_data.dat", "r");

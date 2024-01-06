@@ -2,7 +2,7 @@
 #include "fft_sysdef.h"
 #include "hls_stream.h"
 
-template <int N, int n_clog2_c, int n_instances_c>
+template <int N, int n_clog2_c>
 class input_reorder_buffer
 {
 private:
@@ -10,8 +10,7 @@ private:
     TUI_SAMPLE_ARRAY_IDX idx_reordered;
 
 public:
-    TC_FFT fft_input[n_instances_c][N];
-    TB buffer_full[n_instances_c];
+    TC_FFT fft_input[N];
 
     // Constructor
     input_reorder_buffer(void)
@@ -25,25 +24,19 @@ public:
     void reset()
     {
         sample_count = 0;
-        for (int i = 0; i < n_instances_c; i++)
-        {
-            buffer_full[i] = 0;
-        }
     }
 
     void store_sample(
         // Inputs
-        TI_INPUT_SIGNAL sample_in)
+        TI_INPUT_SIGNAL sample_in,
+        // Outputs
+        TB &buffer_full)
     {
-        idx_reordered = TUI_SAMPLE_ARRAY_IDX(sample_count % N).range(0, n_clog2_c - 1);
-        fft_input[sample_count / N][idx_reordered] = TC_FFT(sample_in, 0);
-        if (sample_count % N == N - 1)
-        {
-            buffer_full[sample_count / N] = 1;
-        }
-        else
-        {
-            sample_count++;
-        }
+        idx_reordered = sample_count.range(0, n_clog2_c - 1);
+        fft_input[idx_reordered] = TC_FFT(TR_FFT(sample_in), 0);
+
+        buffer_full = (sample_count == N - 1) ? 1 : 0;
+
+        sample_count++;
     }
 };
