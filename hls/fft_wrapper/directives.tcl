@@ -6,6 +6,6 @@
 ############################################################
 set_directive_top -name fft_wrapper "fft_wrapper"
 set_directive_interface -mode ap_ctrl_hs "fft_wrapper"
-set_directive_interface -mode axis -register_mode both -register "fft_wrapper" input_signal
+set_directive_interface -mode ap_memory "fft_wrapper" fft_input
 set_directive_interface -mode s_axilite "fft_wrapper" fft_output
 set_directive_disaggregate "fft_wrapper" fft_output

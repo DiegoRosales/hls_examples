@@ -6,10 +6,10 @@
 template <int N, int n_clog2_c>
 class fft
 {
+
 public:
     TC_TWIDDLE_FACTOR twiddle_factors[N / 2]; // Pre-computed twiddle factors
-    TC_FFT fft_stage_input[N];
-    TC_FFT fft_stage_output[N];
+    TC_FFT fft_stage_output[n_clog2_c + 1][N];
     ap_uint<n_clog2_c + 1> m[n_clog2_c];
 
     // Constructor
@@ -55,6 +55,8 @@ public:
     template <class T_IN, class T_OUT>
     void ButterflyOperator(T_IN data_in[N], T_OUT data_out[N], int fft_stage_num)
     {
+#pragma HLS INLINE OFF
+#pragma HLS FUNCTION_INSTANTIATE variable = fft_stage_num
         int j;
         int k;
         TC_FFT product;
@@ -80,33 +82,25 @@ public:
         // Outputs
         TC_FFT fft_output[N])
     {
-        // Calculate first stage
-        ButterflyOperator<TC_FFT, TC_FFT>(fft_input, fft_stage_output, 0);
+#pragma HLS PIPELINE II = 256
+#pragma HLS array_partition type = complete dim = 1 variable = fft_stage_output
+        for (int i = 0; i < N; i++)
+        {
+            fft_stage_output[0][i] = fft_input[i];
+        }
 
     BUTTERFLY_OPERATOR_LOOP:
-        for (int s = 1; s < n_clog2_c; s++)
+        for (int s = 0; s < n_clog2_c; s++)
         {
-            if (s % 2 == 0)
-            {
-                ButterflyOperator<TC_FFT, TC_FFT>(fft_stage_input, fft_stage_output, s);
-            }
-            else
-            {
-                ButterflyOperator<TC_FFT, TC_FFT>(fft_stage_output, fft_stage_input, s);
-            }
+#pragma HLS LATENCY min = 512
+#pragma HLS DATAFLOW
+            ButterflyOperator<TC_FFT, TC_FFT>(fft_stage_output[s], fft_stage_output[s + 1], s);
         }
 
     OUTPUT_MAPPING_LOOP:
         for (int k = 0; k < N; k++)
         {
-            if (n_clog2_c % 2 == 0)
-            {
-                fft_output[k] = fft_stage_input[k];
-            }
-            else
-            {
-                fft_output[k] = fft_stage_output[k];
-            }
+            fft_output[k] = fft_stage_output[n_clog2_c][k];
         }
     }
 };

@@ -22,6 +22,8 @@ int main()
     FILE *fp;
     FILE *fp_generated;
     FILE *fp_golden;
+    TC_FFT fft_input_reordered[N];
+    static input_reorder_buffer<N, n_clog2_c, 1> input_reorder_buffer_obj;
 
     // Read dat file
     fprintf(stdout, "START TEST\n");
@@ -35,16 +37,20 @@ int main()
     {
         fscanf(fp, "%d %d\n", &sample_idx, &input_signal_int);
         input_signal = TI_INPUT_SIGNAL(input_signal_int);
-        input_signal_stream.write(input_signal);
-        fft_wrapper(input_signal_stream, fft_output);
+        input_reorder_buffer_obj.store_sample(input_signal);
         samples_counter++;
+    }
+
+    for (int i = 0; i < N; i++)
+    {
+        fft_input_reordered[i] = input_reorder_buffer_obj.fft_input[0][i];
     }
 
     fclose(fp); // Close the file
 
     fprintf(stdout, "INFO: %d samples sent\n", samples_counter);
 
-    fft_wrapper(input_signal_stream, fft_output);
+    fft_wrapper(fft_input_reordered, fft_output);
 
     fp_generated = fopen("E:/git/hls_examples/dat/generated_data.dat", "w");
     fp_golden = fopen("E:/git/hls_examples/dat/file_example_WAV_1MG_golden_data.dat", "r");
