@@ -6,11 +6,20 @@
 template <int N, int n_clog2_c>
 class fft
 {
+private:
+    int m[n_clog2_c];
+    int j;
+    int k;
+
 public:
     TC_TWIDDLE_FACTOR twiddle_factors[N / 2]; // Pre-computed twiddle factors
     TC_FFT fft_stage_input[N];
     TC_FFT fft_stage_output[N];
-    ap_uint<n_clog2_c + 1> m[n_clog2_c];
+
+    // Indexes arrays
+    TUI_SAMPLE_ARRAY_IDX idx_0[n_clog2_c][N / 2];
+    TUI_SAMPLE_ARRAY_IDX idx_1[n_clog2_c][N / 2];
+    TUI_SAMPLE_ARRAY_IDX twiddle_factor_idx[n_clog2_c][N / 2];
 
     // Constructor
     fft(void)
@@ -34,7 +43,23 @@ public:
     INIT_M_ARRAY:
         for (int i = 0; i < n_clog2_c; i++)
         {
-            m[i] = 1 << (i + 1);
+            m[i] = 1 << i;
+        }
+
+    INIT_INDEXES:
+        for (int s = 0; s < n_clog2_c; s++)
+        {
+            for (int i = 0; i < N / 2; i++)
+            {
+                j = i % m[s];
+                twiddle_factor_idx[s][i] = j * N / (m[s] << 1);
+                if (j == 0)
+                {
+                    k = i * 2;
+                }
+                idx_0[s][i] = k + j;
+                idx_1[s][i] = k + j + m[s];
+            }
         }
 
         // Initialize the twiddle factors and arrays
@@ -53,24 +78,16 @@ public:
     }
 
     template <class T_IN, class T_OUT>
-    void ButterflyOperator(T_IN data_in[N], T_OUT data_out[N], int fft_stage_num)
+    void ButterflyOperator(T_IN data_in[N], T_OUT data_out[N], TUI_SAMPLE_ARRAY_IDX twiddle_factor_idx[N / 2], TUI_SAMPLE_ARRAY_IDX idx_0[N / 2],
+                           TUI_SAMPLE_ARRAY_IDX idx_1[N / 2])
     {
-        int j;
-        int k;
-        TC_FFT product;
     BUTTERFLY_MULTIPLICATION:
         for (int i = 0; i < N / 2; i++)
         {
-#pragma HLS dependence variable = data_out type = inter false
-#pragma HLS dependence variable = data_out type = intra false
-            j = i % (m[fft_stage_num] / 2);
-            if (j == 0)
-            {
-                k = i * 2;
-            }
-            product = comp_mult_three_dsp<TC_TWIDDLE_FACTOR, TC_FFT, TC_FFT>(twiddle_factors[j * N / m[fft_stage_num]], data_in[k + j + m[fft_stage_num] / 2]);
-            data_out[k + j] = data_in[k + j] + product;
-            data_out[k + j + m[fft_stage_num] / 2] = data_in[k + j] - product;
+#pragma HLS PIPELINE II = 2
+            TC_FFT product = comp_mult_three_dsp<TC_TWIDDLE_FACTOR, TC_FFT, TC_FFT>(twiddle_factors[twiddle_factor_idx[i]], data_in[idx_1[i]]);
+            data_out[idx_0[i]] = data_in[idx_0[i]] + product;
+            data_out[idx_1[i]] = data_in[idx_0[i]] - product;
         }
     }
 
@@ -81,32 +98,29 @@ public:
         TC_FFT fft_output[N])
     {
         // Calculate first stage
-        ButterflyOperator<TC_FFT, TC_FFT>(fft_input, fft_stage_output, 0);
+        ButterflyOperator<TC_FFT, TC_FFT>(fft_input, fft_stage_output, twiddle_factor_idx[0], idx_0[0], idx_1[0]);
 
     BUTTERFLY_OPERATOR_LOOP:
-        for (int s = 1; s < n_clog2_c; s++)
+        for (int s = 1; s < n_clog2_c - 1; s++)
         {
             if (s % 2 == 0)
             {
-                ButterflyOperator<TC_FFT, TC_FFT>(fft_stage_input, fft_stage_output, s);
+                ButterflyOperator<TC_FFT, TC_FFT>(fft_stage_input, fft_stage_output, twiddle_factor_idx[s], idx_0[s], idx_1[s]);
             }
             else
             {
-                ButterflyOperator<TC_FFT, TC_FFT>(fft_stage_output, fft_stage_input, s);
+                ButterflyOperator<TC_FFT, TC_FFT>(fft_stage_output, fft_stage_input, twiddle_factor_idx[s], idx_0[s], idx_1[s]);
             }
         }
 
     OUTPUT_MAPPING_LOOP:
-        for (int k = 0; k < N; k++)
+        if (n_clog2_c % 2 == 0)
         {
-            if (n_clog2_c % 2 == 0)
-            {
-                fft_output[k] = fft_stage_input[k];
-            }
-            else
-            {
-                fft_output[k] = fft_stage_output[k];
-            }
+            ButterflyOperator<TC_FFT, TC_FFT>(fft_stage_output, fft_output, twiddle_factor_idx[n_clog2_c - 1], idx_0[n_clog2_c - 1], idx_1[n_clog2_c - 1]);
+        }
+        else
+        {
+            ButterflyOperator<TC_FFT, TC_FFT>(fft_stage_input, fft_output, twiddle_factor_idx[n_clog2_c - 1], idx_0[n_clog2_c - 1], idx_1[n_clog2_c - 1]);
         }
     }
 };
