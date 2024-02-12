@@ -19,6 +19,6 @@ void fft_wrapper(
     if (input_reorder_buffer_obj.buffer_full[0])
     {
         input_reorder_buffer_obj.buffer_full[0] = 0;
-        fft_obj.doFFT(input_reorder_buffer_obj.fft_input[0], fft_output);
+        fft_obj.doFFT(input_reorder_buffer_obj.fft_input_lower[0],input_reorder_buffer_obj.fft_input_upper[0], fft_output);
     }
 }

@@ -13,12 +13,12 @@ private:
 
 public:
     TC_TWIDDLE_FACTOR twiddle_factors[N / 2]; // Pre-computed twiddle factors
-    TC_FFT fft_stage_input[N];
-    TC_FFT fft_stage_output[N];
+    TC_FFT fft_stage_lower[n_clog2_c + 1][N / 2];
+    TC_FFT fft_stage_upper[n_clog2_c + 1][N / 2];
 
     // Indexes arrays
-    TUI_SAMPLE_ARRAY_IDX idx_0[n_clog2_c][N / 2];
-    TUI_SAMPLE_ARRAY_IDX idx_1[n_clog2_c][N / 2];
+    TUI_SAMPLE_ARRAY_IDX idx_lower[n_clog2_c][N / 2];
+    TUI_SAMPLE_ARRAY_IDX idx_upper[n_clog2_c][N / 2];
     TUI_SAMPLE_ARRAY_IDX twiddle_factor_idx[n_clog2_c][N / 2];
 
     // Constructor
@@ -57,8 +57,8 @@ public:
                 {
                     k = i * 2;
                 }
-                idx_0[s][i] = k + j;
-                idx_1[s][i] = k + j + m[s];
+                idx_lower[s][i] = k + j;
+                idx_upper[s][i] = k + j + m[s];
             }
         }
 
@@ -78,49 +78,50 @@ public:
     }
 
     template <class T_IN, class T_OUT>
-    void ButterflyOperator(T_IN data_in[N], T_OUT data_out[N], TUI_SAMPLE_ARRAY_IDX twiddle_factor_idx[N / 2], TUI_SAMPLE_ARRAY_IDX idx_0[N / 2],
-                           TUI_SAMPLE_ARRAY_IDX idx_1[N / 2])
+    void ButterflyOperator(
+        // Inputs
+        T_IN data_in_lower[N / 2],
+        T_IN data_in_upper[N / 2],
+        TUI_SAMPLE_ARRAY_IDX twiddle_factor_idx[N / 2],
+        TUI_SAMPLE_ARRAY_IDX idx_lower[N / 2],
+        TUI_SAMPLE_ARRAY_IDX idx_upper[N / 2],
+        // Outputs
+        T_OUT data_out_lower[N / 2],
+        T_OUT data_out_upper[N / 2])
     {
     BUTTERFLY_MULTIPLICATION:
         for (int i = 0; i < N / 2; i++)
         {
-#pragma HLS PIPELINE II = 2
-            TC_FFT product = comp_mult_three_dsp<TC_TWIDDLE_FACTOR, TC_FFT, TC_FFT>(twiddle_factors[twiddle_factor_idx[i]], data_in[idx_1[i]]);
-            data_out[idx_0[i]] = data_in[idx_0[i]] + product;
-            data_out[idx_1[i]] = data_in[idx_0[i]] - product;
+            TC_FFT product = comp_mult_three_dsp<TC_TWIDDLE_FACTOR, TC_FFT, TC_FFT>(twiddle_factors[twiddle_factor_idx[i]], data_in_upper[idx_upper[i]]);
+            data_out_lower[idx_lower[i]] = data_in_lower[idx_lower[i]] + product;
+            data_out_upper[idx_upper[i]] = data_in_lower[idx_lower[i]] - product;
         }
     }
 
     void doFFT(
         // Inputs
-        TC_FFT fft_input[N],
+        TC_FFT fft_input_lower[N / 2],
+        TC_FFT fft_input_upper[N / 2],
         // Outputs
         TC_FFT fft_output[N])
     {
         // Calculate first stage
-        ButterflyOperator<TC_FFT, TC_FFT>(fft_input, fft_stage_output, twiddle_factor_idx[0], idx_0[0], idx_1[0]);
+        ButterflyOperator<TC_FFT, TC_FFT>(fft_input_lower, fft_input_upper, twiddle_factor_idx[0], idx_lower[0], idx_upper[0], fft_stage_lower[0], fft_stage_upper[0]);
 
     BUTTERFLY_OPERATOR_LOOP:
-        for (int s = 1; s < n_clog2_c - 1; s++)
+        for (int s = 1; s < n_clog2_c; s++)
         {
-            if (s % 2 == 0)
-            {
-                ButterflyOperator<TC_FFT, TC_FFT>(fft_stage_input, fft_stage_output, twiddle_factor_idx[s], idx_0[s], idx_1[s]);
-            }
-            else
-            {
-                ButterflyOperator<TC_FFT, TC_FFT>(fft_stage_output, fft_stage_input, twiddle_factor_idx[s], idx_0[s], idx_1[s]);
-            }
+            ButterflyOperator<TC_FFT, TC_FFT>(fft_stage_lower[s], fft_stage_upper[s], twiddle_factor_idx[s], idx_lower[s], idx_upper[s], fft_stage_lower[s + 1], fft_stage_upper[s + 1]);
         }
 
     OUTPUT_MAPPING_LOOP:
-        if (n_clog2_c % 2 == 0)
+        for (int i = 0; i < N / 2; i++)
         {
-            ButterflyOperator<TC_FFT, TC_FFT>(fft_stage_output, fft_output, twiddle_factor_idx[n_clog2_c - 1], idx_0[n_clog2_c - 1], idx_1[n_clog2_c - 1]);
+            fft_output[i] = fft_stage_lower[n_clog2_c][i];
         }
-        else
+        for (int i = N / 2; i < N; i++)
         {
-            ButterflyOperator<TC_FFT, TC_FFT>(fft_stage_input, fft_output, twiddle_factor_idx[n_clog2_c - 1], idx_0[n_clog2_c - 1], idx_1[n_clog2_c - 1]);
+            fft_output[i] = fft_stage_upper[n_clog2_c][i - N / 2];
         }
     }
 };
