@@ -6,18 +6,12 @@
 template <int N, int n_clog2_c>
 class fft
 {
-private:
-    int m[n_clog2_c];
-    int j;
-    int k;
-
 public:
     TC_TWIDDLE_FACTOR twiddle_factors[N / 2]; // Pre-computed twiddle factors
-    TC_FFT fft_stage_lower[n_clog2_c + 1][N / 2];
-    TC_FFT fft_stage_upper[n_clog2_c + 1][N / 2];
+    TC_FFT fft_stage_lower[n_clog2_c - 1][N / 2];
+    TC_FFT fft_stage_upper[n_clog2_c - 1][N / 2];
 
     // Indexes arrays
-    TUI_SAMPLE_ARRAY_IDX idx_lower[n_clog2_c][N / 2];
     TUI_SAMPLE_ARRAY_IDX idx_upper[n_clog2_c][N / 2];
     TUI_SAMPLE_ARRAY_IDX twiddle_factor_idx[n_clog2_c][N / 2];
 
@@ -40,25 +34,15 @@ public:
     // Reset function
     void reset()
     {
-    INIT_M_ARRAY:
-        for (int i = 0; i < n_clog2_c; i++)
-        {
-            m[i] = 1 << i;
-        }
 
     INIT_INDEXES:
         for (int s = 0; s < n_clog2_c; s++)
         {
+            int m = (N / 2) >> s;
             for (int i = 0; i < N / 2; i++)
             {
-                j = i % m[s];
-                twiddle_factor_idx[s][i] = j * N / (m[s] << 1);
-                if (j == 0)
-                {
-                    k = i * 2;
-                }
-                idx_lower[s][i] = k + j;
-                idx_upper[s][i] = k + j + m[s];
+                twiddle_factor_idx[s][i] = TUI_SAMPLE_ARRAY_IDX((i * m) % (N / 2));
+                idx_upper[s][i] = i ^ (-1 << s) + N / 2;
             }
         }
 
@@ -83,8 +67,8 @@ public:
         T_IN data_in_lower[N / 2],
         T_IN data_in_upper[N / 2],
         TUI_SAMPLE_ARRAY_IDX twiddle_factor_idx[N / 2],
-        TUI_SAMPLE_ARRAY_IDX idx_lower[N / 2],
         TUI_SAMPLE_ARRAY_IDX idx_upper[N / 2],
+        int s,
         // Outputs
         T_OUT data_out_lower[N / 2],
         T_OUT data_out_upper[N / 2])
@@ -92,9 +76,37 @@ public:
     BUTTERFLY_MULTIPLICATION:
         for (int i = 0; i < N / 2; i++)
         {
-            TC_FFT product = comp_mult_three_dsp<TC_TWIDDLE_FACTOR, TC_FFT, TC_FFT>(twiddle_factors[twiddle_factor_idx[i]], data_in_upper[idx_upper[i]]);
-            data_out_lower[idx_lower[i]] = data_in_lower[idx_lower[i]] + product;
-            data_out_upper[idx_upper[i]] = data_in_lower[idx_lower[i]] - product;
+#pragma HLS pipeline II = 1
+            T_IN data_lower_swapped;
+            T_IN data_upper_swapped;
+            TUI_SAMPLE_ARRAY_IDX idx = TUI_SAMPLE_ARRAY_IDX(i);
+            TB swap_previous_stage = s != 0 && (idx & (1 << (s - 1)));
+            TB swap_post_stage = idx.test(s);
+            if (swap_previous_stage)
+            {
+                // Swap input data
+                data_lower_swapped = data_in_upper[idx_upper[i]];
+                data_upper_swapped = data_in_lower[i];
+            }
+            else
+            {
+                data_lower_swapped = data_in_lower[i];
+                data_upper_swapped = data_in_upper[idx_upper[i]];
+            }
+
+            TC_FFT product = comp_mult_three_dsp<TC_TWIDDLE_FACTOR, TC_FFT, TC_FFT>(twiddle_factors[twiddle_factor_idx[i]], data_upper_swapped);
+
+            // Swap output data
+            if (swap_post_stage)
+            {
+                data_out_lower[i] = data_lower_swapped - product;
+                data_out_upper[idx_upper[i]] = data_lower_swapped + product;
+            }
+            else
+            {
+                data_out_lower[i] = data_lower_swapped + product;
+                data_out_upper[idx_upper[i]] = data_lower_swapped - product;
+            }
         }
     }
 
@@ -103,25 +115,18 @@ public:
         TC_FFT fft_input_lower[N / 2],
         TC_FFT fft_input_upper[N / 2],
         // Outputs
-        TC_FFT fft_output[N])
+        TC_FFT fft_output_lower[N / 2],
+        TC_FFT fft_output_upper[N / 2])
     {
         // Calculate first stage
-        ButterflyOperator<TC_FFT, TC_FFT>(fft_input_lower, fft_input_upper, twiddle_factor_idx[0], idx_lower[0], idx_upper[0], fft_stage_lower[0], fft_stage_upper[0]);
+        ButterflyOperator<TC_FFT, TC_FFT>(fft_input_lower, fft_input_upper, twiddle_factor_idx[0], idx_upper[0], 0, fft_stage_lower[0], fft_stage_upper[0]);
 
     BUTTERFLY_OPERATOR_LOOP:
-        for (int s = 1; s < n_clog2_c; s++)
+        for (int s = 1; s < n_clog2_c - 1; s++)
         {
-            ButterflyOperator<TC_FFT, TC_FFT>(fft_stage_lower[s], fft_stage_upper[s], twiddle_factor_idx[s], idx_lower[s], idx_upper[s], fft_stage_lower[s + 1], fft_stage_upper[s + 1]);
+            ButterflyOperator<TC_FFT, TC_FFT>(fft_stage_lower[s - 1], fft_stage_upper[s - 1], twiddle_factor_idx[s], idx_upper[s], s, fft_stage_lower[s], fft_stage_upper[s]);
         }
 
-    OUTPUT_MAPPING_LOOP:
-        for (int i = 0; i < N / 2; i++)
-        {
-            fft_output[i] = fft_stage_lower[n_clog2_c][i];
-        }
-        for (int i = N / 2; i < N; i++)
-        {
-            fft_output[i] = fft_stage_upper[n_clog2_c][i - N / 2];
-        }
+        ButterflyOperator<TC_FFT, TC_FFT>(fft_stage_lower[n_clog2_c - 2], fft_stage_upper[n_clog2_c - 2], twiddle_factor_idx[n_clog2_c - 1], idx_upper[n_clog2_c - 1], n_clog2_c - 1, fft_output_lower, fft_output_upper);
     }
 };

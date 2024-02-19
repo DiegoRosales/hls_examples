@@ -123,10 +123,11 @@ def fft_radix2(x):
         for k in range(0, N, m):
             w = 1
             for j in range(m // 2):
-                t = w * X[k + j + m // 2]
-                u = X[k + j]
-                X[k + j] = u + t
-                X[k + j + m // 2] = u - t
+                x_upper = X[k + j + m // 2]
+                t = w * x_upper
+                x_lower = X[k + j]
+                X[k + j] = x_lower + t
+                X[k + j + m // 2] = x_lower - t
                 w *= twiddle_factors[N // m]
 
     return X
@@ -134,7 +135,7 @@ def fft_radix2(x):
 # Example usage:
 N= 1024
 sample_rate = 44100
-input_signal = np.loadtxt('E:/git/hls_examples/dat/file_example_WAV_1MG.dat', usecols=(1,))
+input_signal = np.loadtxt('../dat/file_example_WAV_1MG.dat', usecols=(1,))
 fft_result = fft_radix2(input_signal[0:N])
 f = np.fft.fftfreq(N, 1/sample_rate)
 plt.figure()
