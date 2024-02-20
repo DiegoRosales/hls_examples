@@ -73,6 +73,8 @@ public:
         T_OUT data_out_lower[N / 2],
         T_OUT data_out_upper[N / 2])
     {
+#pragma HLS INLINE OFF
+#pragma HLS FUNCTION_INSTANTIATE variable = s
     BUTTERFLY_MULTIPLICATION:
         for (int i = 0; i < N / 2; i++)
         {
@@ -118,12 +120,14 @@ public:
         TC_FFT fft_output_lower[N / 2],
         TC_FFT fft_output_upper[N / 2])
     {
+#pragma HLS dataflow
         // Calculate first stage
         ButterflyOperator<TC_FFT, TC_FFT>(fft_input_lower, fft_input_upper, twiddle_factor_idx[0], idx_upper[0], 0, fft_stage_lower[0], fft_stage_upper[0]);
 
     BUTTERFLY_OPERATOR_LOOP:
         for (int s = 1; s < n_clog2_c - 1; s++)
         {
+#pragma HLS unroll
             ButterflyOperator<TC_FFT, TC_FFT>(fft_stage_lower[s - 1], fft_stage_upper[s - 1], twiddle_factor_idx[s], idx_upper[s], s, fft_stage_lower[s], fft_stage_upper[s]);
         }
 
