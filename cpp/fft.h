@@ -1,3 +1,4 @@
+#pragma once
 #include "hls_math.h"
 #include <complex>
 #include "fft_sysdef.h"

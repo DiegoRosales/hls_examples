@@ -1,3 +1,4 @@
+#pragma once
 #include <complex>
 #include "fft_sysdef.h"
 #include "hls_stream.h"
@@ -10,10 +11,6 @@ private:
     TUI_SAMPLE_ARRAY_IDX idx_reordered;
 
 public:
-    TC_FFT fft_input_lower[N / 2];
-    TC_FFT fft_input_upper[N / 2];
-    TB buffer_full;
-
     // Constructor
     input_reorder_buffer(void)
     {
@@ -30,7 +27,11 @@ public:
 
     void store_sample(
         // Inputs
-        TI_INPUT_SIGNAL sample_in)
+        TI_INPUT_SIGNAL sample_in,
+        // Outputs
+        TC_FFT fft_input_lower[N / 2],
+        TC_FFT fft_input_upper[N / 2],
+        TB &buffer_full)
     {
         idx_reordered = sample_count;
         idx_reordered.reverse();

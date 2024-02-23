@@ -4,6 +4,7 @@
 #include "fft_sysdef.h"
 #include "fft_test_sysdef.h"
 #include "fft_wrapper.h"
+#include "input_reorder_buffer_wrapper.h"
 
 using namespace std;
 
@@ -11,6 +12,9 @@ int main()
 {
     hls::stream<TI_INPUT_SIGNAL> input_signal_stream;
     TI_INPUT_SIGNAL input_signal;
+    TC_FFT fft_input_lower[N / 2];
+    TC_FFT fft_input_upper[N / 2];
+    TB buffer_full = 0;
     int input_signal_int;
     TC_FFT fft_output[N];
     double fft_magnitud[N];
@@ -31,20 +35,36 @@ int main()
     // fp = fopen("E:/git/hls_examples/dat/sin20khz.dat", "r");
     // fp = fopen("E:/git/hls_examples/dat/sin1khz.dat", "r");
 
-    for (int i = 0; i < N; i++)
+    while (buffer_full == false)
     {
         fscanf(fp, "%d %d\n", &sample_idx, &input_signal_int);
         input_signal = TI_INPUT_SIGNAL(input_signal_int);
         input_signal_stream.write(input_signal);
-        fft_wrapper(input_signal_stream, fft_output);
+        input_reorder_buffer_wrapper(
+            // Inputs
+            input_signal_stream,
+            // Outputs
+            fft_input_lower,
+            fft_input_upper,
+            buffer_full);
+
         samples_counter++;
+    }
+
+    if (buffer_full)
+    {
+        fprintf(stdout, "Buffer is full, computing FFT...\n");
+        fft_wrapper(
+            // Inputs
+            fft_input_lower,
+            fft_input_upper,
+            // Outputs
+            fft_output);
     }
 
     fclose(fp); // Close the file
 
     fprintf(stdout, "INFO: %d samples sent\n", samples_counter);
-
-    fft_wrapper(input_signal_stream, fft_output);
 
     fp_generated = fopen("E:/git/hls_examples/dat/generated_data.dat", "w");
     fp_golden = fopen("E:/git/hls_examples/dat/file_example_WAV_1MG_golden_data.dat", "r");

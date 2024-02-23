@@ -5,9 +5,11 @@
 ## Copyright 2022-2023 Advanced Micro Devices, Inc. All Rights Reserved.
 ############################################################
 set_directive_top -name fft_wrapper "fft_wrapper"
+set_directive_dataflow "fft_wrapper"
 set_directive_interface -mode ap_ctrl_hs "fft_wrapper"
-set_directive_interface -mode axis -register_mode both -register "fft_wrapper" input_signal
-set_directive_interface -mode s_axilite "fft_wrapper" fft_output
+set_directive_interface -mode ap_memory "fft_wrapper" fft_input_lower
+set_directive_interface -mode ap_memory "fft_wrapper" fft_input_upper
+set_directive_interface -mode s_axilite -clock cpu_clk "fft_wrapper" fft_output
 set_directive_disaggregate "fft_wrapper" fft_output
 set_directive_array_partition -type complete -dim 1 "fft_wrapper" fft_obj.twiddle_factor_idx
 set_directive_array_partition -type complete -dim 1 "fft_wrapper" fft_obj.idx_upper
