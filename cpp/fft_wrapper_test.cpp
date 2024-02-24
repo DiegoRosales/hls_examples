@@ -4,7 +4,6 @@
 #include "fft_sysdef.h"
 #include "fft_test_sysdef.h"
 #include "fft_wrapper.h"
-#include "input_reorder_buffer_wrapper.h"
 
 using namespace std;
 
@@ -14,7 +13,6 @@ int main()
     TI_INPUT_SIGNAL input_signal;
     TC_FFT fft_input_lower[N / 2];
     TC_FFT fft_input_upper[N / 2];
-    TB buffer_full = 0;
     int input_signal_int;
     TC_FFT fft_output[N];
     double fft_magnitud[N];
@@ -35,32 +33,22 @@ int main()
     // fp = fopen("E:/git/hls_examples/dat/sin20khz.dat", "r");
     // fp = fopen("E:/git/hls_examples/dat/sin1khz.dat", "r");
 
-    while (buffer_full == false)
+    samples_counter = 0;
+    while (samples_counter < N)
     {
         fscanf(fp, "%d %d\n", &sample_idx, &input_signal_int);
         input_signal = TI_INPUT_SIGNAL(input_signal_int);
         input_signal_stream.write(input_signal);
-        input_reorder_buffer_wrapper(
-            // Inputs
-            input_signal_stream,
-            // Outputs
-            fft_input_lower,
-            fft_input_upper,
-            buffer_full);
-
         samples_counter++;
     }
 
-    if (buffer_full)
-    {
-        fprintf(stdout, "Buffer is full, computing FFT...\n");
-        fft_wrapper(
-            // Inputs
-            fft_input_lower,
-            fft_input_upper,
-            // Outputs
-            fft_output);
-    }
+    fprintf(stdout, "Sending samples to input channel and computing FFT...\n");
+
+    fft_wrapper(
+        // Inputs
+        input_signal_stream,
+        // Outputs
+        fft_output);
 
     fclose(fp); // Close the file
 

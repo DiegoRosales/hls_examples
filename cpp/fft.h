@@ -12,9 +12,14 @@ public:
     TC_FFT fft_stage_lower[n_clog2_c - 1][N / 2];
     TC_FFT fft_stage_upper[n_clog2_c - 1][N / 2];
 
-    // Indexes arrays
-    TUI_SAMPLE_ARRAY_IDX idx_upper[n_clog2_c][N / 2];
-    TUI_SAMPLE_ARRAY_IDX twiddle_factor_idx[n_clog2_c][N / 2];
+    // Structure to hold pre-computed indexes
+    // Merging these arrays inside a struct allows Vitis HLS to use a single ROM to store the values
+    struct T_PRECOMPUTED_INDEXES
+    {
+        TUI_SAMPLE_ARRAY_IDX idx_upper;
+        TUI_SAMPLE_ARRAY_IDX twiddle_factor_idx;
+    };
+    T_PRECOMPUTED_INDEXES precomputed_idx[n_clog2_c][N / 2];
 
     // Constructor
     fft(void)
@@ -36,14 +41,15 @@ public:
     void reset()
     {
 
+        // Initialize pre-computed indexes
     INIT_INDEXES:
         for (int s = 0; s < n_clog2_c; s++)
         {
             int m = (N / 2) >> s;
             for (int i = 0; i < N / 2; i++)
             {
-                twiddle_factor_idx[s][i] = TUI_SAMPLE_ARRAY_IDX((i * m) % (N / 2));
-                idx_upper[s][i] = i ^ (-1 << s) + N / 2;
+                precomputed_idx[s][i].twiddle_factor_idx = TUI_SAMPLE_ARRAY_IDX((i * m) % (N / 2));
+                precomputed_idx[s][i].idx_upper = i ^ (-1 << s) + N / 2;
             }
         }
 
@@ -67,8 +73,7 @@ public:
         // Inputs
         T_IN data_in_lower[N / 2],
         T_IN data_in_upper[N / 2],
-        TUI_SAMPLE_ARRAY_IDX twiddle_factor_idx[N / 2],
-        TUI_SAMPLE_ARRAY_IDX idx_upper[N / 2],
+        T_PRECOMPUTED_INDEXES precomputed_idx[N / 2],
         int s,
         // Outputs
         T_OUT data_out_lower[N / 2],
@@ -83,32 +88,32 @@ public:
             T_IN data_lower_swapped;
             T_IN data_upper_swapped;
             TUI_SAMPLE_ARRAY_IDX idx = TUI_SAMPLE_ARRAY_IDX(i);
-            TB swap_previous_stage = s != 0 && (idx & (1 << (s - 1)));
+            TB swap_previous_stage = s != 0 && idx.test(s - 1);
             TB swap_post_stage = idx.test(s);
             if (swap_previous_stage)
             {
                 // Swap input data
-                data_lower_swapped = data_in_upper[idx_upper[i]];
+                data_lower_swapped = data_in_upper[precomputed_idx[i].idx_upper];
                 data_upper_swapped = data_in_lower[i];
             }
             else
             {
                 data_lower_swapped = data_in_lower[i];
-                data_upper_swapped = data_in_upper[idx_upper[i]];
+                data_upper_swapped = data_in_upper[precomputed_idx[i].idx_upper];
             }
 
-            TC_FFT product = comp_mult_three_dsp<TC_TWIDDLE_FACTOR, TC_FFT, TC_FFT>(twiddle_factors[twiddle_factor_idx[i]], data_upper_swapped);
+            TC_FFT product = comp_mult_three_dsp<TC_TWIDDLE_FACTOR, TC_FFT, TC_FFT>(twiddle_factors[precomputed_idx[i].twiddle_factor_idx], data_upper_swapped);
 
             // Swap output data
             if (swap_post_stage)
             {
                 data_out_lower[i] = data_lower_swapped - product;
-                data_out_upper[idx_upper[i]] = data_lower_swapped + product;
+                data_out_upper[precomputed_idx[i].idx_upper] = data_lower_swapped + product;
             }
             else
             {
                 data_out_lower[i] = data_lower_swapped + product;
-                data_out_upper[idx_upper[i]] = data_lower_swapped - product;
+                data_out_upper[precomputed_idx[i].idx_upper] = data_lower_swapped - product;
             }
         }
     }
@@ -123,15 +128,15 @@ public:
     {
 #pragma HLS dataflow
         // Calculate first stage
-        ButterflyOperator<TC_FFT, TC_FFT>(fft_input_lower, fft_input_upper, twiddle_factor_idx[0], idx_upper[0], 0, fft_stage_lower[0], fft_stage_upper[0]);
+        ButterflyOperator<TC_FFT, TC_FFT>(fft_input_lower, fft_input_upper, precomputed_idx[0], 0, fft_stage_lower[0], fft_stage_upper[0]);
 
     BUTTERFLY_OPERATOR_LOOP:
         for (int s = 1; s < n_clog2_c - 1; s++)
         {
 #pragma HLS unroll
-            ButterflyOperator<TC_FFT, TC_FFT>(fft_stage_lower[s - 1], fft_stage_upper[s - 1], twiddle_factor_idx[s], idx_upper[s], s, fft_stage_lower[s], fft_stage_upper[s]);
+            ButterflyOperator<TC_FFT, TC_FFT>(fft_stage_lower[s - 1], fft_stage_upper[s - 1], precomputed_idx[s], s, fft_stage_lower[s], fft_stage_upper[s]);
         }
 
-        ButterflyOperator<TC_FFT, TC_FFT>(fft_stage_lower[n_clog2_c - 2], fft_stage_upper[n_clog2_c - 2], twiddle_factor_idx[n_clog2_c - 1], idx_upper[n_clog2_c - 1], n_clog2_c - 1, fft_output_lower, fft_output_upper);
+        ButterflyOperator<TC_FFT, TC_FFT>(fft_stage_lower[n_clog2_c - 2], fft_stage_upper[n_clog2_c - 2], precomputed_idx[n_clog2_c - 1], n_clog2_c - 1, fft_output_lower, fft_output_upper);
     }
 };
