@@ -1,14 +1,30 @@
+/*
+    File: fft.h
+    Author: Lucas Mariano Grigolato
+    Date: 2024/02/25
+    Description: This header file defines the 'fft' class template, which
+    implements the Radix-2 Fast Fourier Transform (FFT) algorithm. The class
+    provides methods for computing FFT, initializing twiddle factors, and
+    performing butterfly operations. It leverages HLS pragmas for efficient
+    hardware synthesis and utilizes HLS stream for data streaming.
+*/
+
 #pragma once
+
+// Include relevant libraries
 #include "hls_math.h"
 #include <complex>
 #include "fft_sysdef.h"
 #include "hls_stream.h"
 
+// Define the 'fft' class template
 template <int N, int n_clog2_c>
 class fft
 {
 public:
-    TC_TWIDDLE_FACTOR twiddle_factors[N / 2]; // Pre-computed twiddle factors
+    // Pre-computed twiddle factors
+    TC_TWIDDLE_FACTOR twiddle_factors[N / 2];
+    // Arrays to store intermediate FFT results for lower and upper stages
     TC_FFT fft_stage_lower[n_clog2_c - 1][N / 2];
     TC_FFT fft_stage_upper[n_clog2_c - 1][N / 2];
 
@@ -24,7 +40,7 @@ public:
     // Constructor
     fft(void)
     {
-        reset();
+        reset(); // Call the reset method to initialize the object
     }
 
     // Destructor
@@ -33,14 +49,13 @@ public:
     // Compute twiddle factors at compile time
     TC_TWIDDLE_FACTOR computeTwiddleFactor(int k)
     {
-        double angle = -2.0 * M_PI * k / N;
-        return TC_TWIDDLE_FACTOR(cos(angle), sin(angle));
+        double angle = -2.0 * M_PI * k / N;               // Calculate angle for twiddle factor
+        return TC_TWIDDLE_FACTOR(cos(angle), sin(angle)); // Return twiddle factor
     }
 
     // Reset function
     void reset()
     {
-
         // Initialize pre-computed indexes
     INIT_INDEXES:
         for (int stage_num = 0; stage_num < n_clog2_c; stage_num++)
@@ -61,6 +76,7 @@ public:
         }
     }
 
+    // Function template for complex multiplication using 3 DSPs in hardware
     template <class T_A, class T_B, class T_C>
     T_C comp_mult_three_dsp(const T_A &a, const T_B &b)
     {
@@ -68,6 +84,7 @@ public:
                    (a.imag() * (b.real() + b.imag()) + b.imag() * (a.real() - a.imag())));
     }
 
+    // Butterfly operation method
     template <class T_IN, class T_OUT>
     void ButterflyOperator(
         // Inputs
@@ -81,6 +98,8 @@ public:
     {
 #pragma HLS INLINE OFF
 #pragma HLS FUNCTION_INSTANTIATE variable = stage_num
+
+    // Perform butterfly operation
     BUTTERFLY_MULTIPLICATION:
         for (int i = 0; i < N / 2; i++)
         {
@@ -118,6 +137,7 @@ public:
         }
     }
 
+    // Method to perform FFT computation
     void doFFT(
         // Inputs
         TC_FFT fft_input_lower[N / 2],
@@ -128,15 +148,41 @@ public:
     {
 #pragma HLS dataflow
         // Calculate first stage
-        ButterflyOperator<TC_FFT, TC_FFT>(fft_input_lower, fft_input_upper, precomputed_idx[0], 0, fft_stage_lower[0], fft_stage_upper[0]);
+        ButterflyOperator<TC_FFT, TC_FFT>(
+            // Inputs
+            fft_input_lower,
+            fft_input_upper,
+            precomputed_idx[0],
+            0,
+            // Outputs
+            fft_stage_lower[0],
+            fft_stage_upper[0]);
 
+        // Iterate over remaining stages
     BUTTERFLY_OPERATOR_LOOP:
         for (int stage_num = 1; stage_num < n_clog2_c - 1; stage_num++)
         {
 #pragma HLS unroll
-            ButterflyOperator<TC_FFT, TC_FFT>(fft_stage_lower[stage_num - 1], fft_stage_upper[stage_num - 1], precomputed_idx[stage_num], stage_num, fft_stage_lower[stage_num], fft_stage_upper[stage_num]);
+            ButterflyOperator<TC_FFT, TC_FFT>(
+                // Inputs
+                fft_stage_lower[stage_num - 1],
+                fft_stage_upper[stage_num - 1],
+                precomputed_idx[stage_num],
+                stage_num,
+                // Outputs
+                fft_stage_lower[stage_num],
+                fft_stage_upper[stage_num]);
         }
 
-        ButterflyOperator<TC_FFT, TC_FFT>(fft_stage_lower[n_clog2_c - 2], fft_stage_upper[n_clog2_c - 2], precomputed_idx[n_clog2_c - 1], n_clog2_c - 1, fft_output_lower, fft_output_upper);
+        // Calculate final stage
+        ButterflyOperator<TC_FFT, TC_FFT>(
+            // Inputs
+            fft_stage_lower[n_clog2_c - 2],
+            fft_stage_upper[n_clog2_c - 2],
+            precomputed_idx[n_clog2_c - 1],
+            n_clog2_c - 1,
+            // Outputs
+            fft_output_lower,
+            fft_output_upper);
     }
 };

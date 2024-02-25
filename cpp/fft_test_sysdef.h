@@ -1,23 +1,27 @@
-// Number of iterations for testbench
-static const int num_iterations = 20;
+/*
+    File: fft_test_sysdef.h
+    Author: Lucas Mariano Grigolato
+    Date: 2024/02/25
+    Description: Header file containing types and constants declarations for
+    the test case function of the Radix-2 FFT HLS block.
+*/
 
-// Define the accepted upper threshold for RMSE percentage.
-double rmse_threshold = 1; // %
+// Constants
+static const int num_iterations = 20; // Number of iterations for the test case
+const double rmse_threshold = 1.0;    // Accepted upper threshold for RMSE% (in percent)
 
 // Function to calculate the absolute value or modulus of a complex number.
 template <class TC>
 double abs(TC data)
 {
-    return (sqrt(pow(data.real().to_double(), 2) + pow(data.imag().to_double(), 2)));
+    return sqrt(pow(data.real().to_double(), 2) + pow(data.imag().to_double(), 2));
 }
 
 // Function to calculate the Root Mean Squared Error Percentage (RMSE%) between two sets of data.
 template <int N>
 double calculatePercentRMSE(double predicted[N], double actual[N])
 {
-    double mse = 0.0;
-    double rmse = 0.0;
-    double mean = 0.0;
+    double mse = 0.0, rmse = 0.0, mean = 0.0;
 
     for (int i = 0; i < N; i++)
     {

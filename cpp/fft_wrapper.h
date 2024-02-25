@@ -1,8 +1,9 @@
 /*
     File: fft_wrapper.h
     Author: Lucas Mariano Grigolato
-    Date: February 25, 2024
-    Description: Header file containing declarations for the wrapper function of the Radix-2 FFT HLS block.
+    Date: 2024/02/25
+    Description: Header file containing declarations for the wrapper function of
+    the Radix-2 FFT HLS block.
 */
 
 #pragma once

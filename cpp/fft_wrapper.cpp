@@ -1,15 +1,18 @@
 /*
     File: fft_wrapper.cpp
     Author: Lucas Mariano Grigolato
-    Date: February 25, 2024
-    Description: This file contains a wrapper function for the Radix-2 FFT HLS block.
-    The wrapper function instantiates two objects:
-        - "input_reorder_buffer_obj": This object maps the incoming samples from the AXI4-Stream
-          input interface into two memories of size N/2 (where N is the number of FFT points),
-          in a specific order optimized for running the FFT algorithm with an initiation interval (II) of 1.
-        - "fft_obj": This object receives the required samples to compute the N-point Radix-2 FFT,
-          which are mapped into two separate memories to achieve an II of 1 in calculating each FFT value.
-          The output is stored in two arrays of size N/2, which will be mapped to two memories in hardware.
+    Date: 2024/02/25
+    Description: This file contains a wrapper function for the Radix-2 FFT HLS
+    block. The wrapper function instantiates two objects:
+        - "input_reorder_buffer_obj": This object maps the incoming samples from
+          the AXI4-Stream input interface into two memories of size N/2 (where N
+          is the number of FFT points), in a specific order optimized for
+          running the FFT algorithm with an initiation interval (II) of 1.
+        - "fft_obj": This object receives the required samples to compute the
+          N-point Radix-2 FFT, which are mapped into two separate memories to
+          achieve an II of 1 in calculating each FFT value. The output is stored
+          in two arrays of size N/2, which will be mapped to two memories in
+          hardware.
 */
 
 #include "fft_wrapper.h"

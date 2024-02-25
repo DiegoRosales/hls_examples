@@ -1,3 +1,16 @@
+/*
+    File: fft_wrapper_test.cpp
+    Author: Lucas Mariano Grigolato
+    Date: 2024/02/25
+    Description: This file contains the test case for the wrapper function
+    of the Radix-2 FFT HLS block. It reads input data from a file, processes
+    it through the FFT wrapper function, compares the results with golden
+    output data, and calculates the Root Mean Squared Error (RMSE) percentage
+    to assess the accuracy of the implementation. The test is conducted
+    iteratively for a specified number of iterations or until the RMSE exceeds
+    a predefined threshold.
+*/
+
 #include <stdio.h>
 #include <cstdlib>
 #include <cmath>
@@ -10,40 +23,40 @@ using namespace std;
 
 int main()
 {
-    // Variables definitions
-    hls::stream<TI_INPUT_SIGNAL> input_signal_stream;
-    TI_INPUT_SIGNAL input_signal;
-    TC_FFT fft_input_lower[N / 2];
-    TC_FFT fft_input_upper[N / 2];
-    int input_signal_int;
-    TC_FFT fft_output_lower[N / 2];
-    TC_FFT fft_output_upper[N / 2];
-    TC_FFT fft_output[N];
-    double fft_magnitude_test[N];
-    double fft_magnitude_golden[N];
-    int samples_counter;
-    double rmse_last;
-    double rmse[num_iterations];
-    double fft_magnitude_golden_tmp;
+    // Variable definitions
+    hls::stream<TI_INPUT_SIGNAL> input_signal_stream; // Stream for input signal
+    TI_INPUT_SIGNAL input_sample;                     // Single input sample
+    int input_sample_int;                             // Temporary storage for input sample integer value
+    TC_FFT fft_input_lower[N / 2];                    // Lower part of FFT input
+    TC_FFT fft_input_upper[N / 2];                    // Upper part of FFT input
+    TC_FFT fft_output_lower[N / 2];                   // Lower part of FFT output
+    TC_FFT fft_output_upper[N / 2];                   // Upper part of FFT output
+    TC_FFT fft_output[N];                             // Full FFT output
+    double fft_magnitude_test[N];                     // Magnitude of FFT output for testing
+    double fft_magnitude_golden[N];                   // Magnitude of golden FFT output
+    int samples_counter;                              // Counter for the number of samples read
+    double rmse_last;                                 // Last calculated RMSE%
+    double rmse[num_iterations];                      // Array to store RMSE% values for each iteration
+    double fft_magnitude_golden_tmp;                  // Temporary storage for golden FFT magnitude
 
-    // Relevant paths
+    // Relevant file paths
     string root_path = "../../../../../../";
     string dat_path = root_path + "dat/";
-    string ref_input_filepath = dat_path + "file_example_WAV_1MG.dat";
-    string test_output_filepath = dat_path + "fft_test_output.dat";
-    string golden_output_filepath = dat_path + "fft_golden_output.dat";
+    string ref_input_filepath = dat_path + "file_example_WAV_1MG.dat";  // Path to input data file
+    string test_output_filepath = dat_path + "fft_test_output.dat";     // Path to test output data file
+    string golden_output_filepath = dat_path + "fft_golden_output.dat"; // Path to golden output data file
 
     // File pointers
-    FILE *fp_ref_input;
-    FILE *fp_test_output;
-    FILE *fp_golden_output;
+    FILE *fp_ref_input;     // Pointer to input data file
+    FILE *fp_test_output;   // Pointer to test output data file
+    FILE *fp_golden_output; // Pointer to golden output data file
 
     // Open relevant files
-    fp_ref_input = fopen(ref_input_filepath.c_str(), "r");
-    fp_test_output = fopen(test_output_filepath.c_str(), "w");
-    fp_golden_output = fopen(golden_output_filepath.c_str(), "r");
+    fp_ref_input = fopen(ref_input_filepath.c_str(), "r");         // Open input data file in read mode
+    fp_test_output = fopen(test_output_filepath.c_str(), "w");     // Open test output data file in write mode
+    fp_golden_output = fopen(golden_output_filepath.c_str(), "r"); // Open golden output data file in read mode
 
-    // Read dat file
+    // Read data from the input file
     fprintf(stdout, "\n\nINFO: Starting test\n\n");
     fprintf(stdout, "#########################################################\n\n");
     for (int i = 0; i < num_iterations; i++)
@@ -55,9 +68,9 @@ int main()
         samples_counter = 0;
         while (samples_counter < N)
         {
-            fscanf(fp_ref_input, "%d\n", &input_signal_int);
-            input_signal = TI_INPUT_SIGNAL(input_signal_int);
-            input_signal_stream.write(input_signal);
+            fscanf(fp_ref_input, "%d\n", &input_sample_int);  // Read input signal integer value from file
+            input_sample = TI_INPUT_SIGNAL(input_sample_int); // Convert integer to input signal type
+            input_signal_stream.write(input_sample);          // Write input signal to input stream
             samples_counter++;
         }
 
@@ -71,7 +84,7 @@ int main()
             fft_output_lower,
             fft_output_upper);
 
-        // Map the result into a single array for simplification
+    // Map the result into a single array for simplification
     OUTPUT_MAPPING_LOOP_LOWER:
         for (int i = 0; i < N / 2; i++)
         {
@@ -89,20 +102,21 @@ int main()
         // Read the golden output file and calculate the magnitude of the complex values obtained from the calculated FFT.
         for (int j = 0; j < N; j++)
         {
-            fscanf(fp_golden_output, "%lf\n", &fft_magnitude_golden_tmp);
-            fft_magnitude_golden[j] = fft_magnitude_golden_tmp;
-            fft_magnitude_test[j] = abs<TC_FFT>(fft_output[j]);
-            fprintf(fp_test_output, "%lf\n", fft_magnitude_test[j]); // Write test output in file for future use
+            fscanf(fp_golden_output, "%lf\n", &fft_magnitude_golden_tmp); // Read golden FFT magnitude from file
+            fft_magnitude_golden[j] = fft_magnitude_golden_tmp;           // Store golden FFT magnitude
+            fft_magnitude_test[j] = abs<TC_FFT>(fft_output[j]);           // Calculate magnitude of test FFT output
+            fprintf(fp_test_output, "%lf\n", fft_magnitude_test[j]);      // Write test FFT magnitude to file
         }
 
         // Calculate the Root Mean Squared Error (RMSE) percentage between the golden and the test data.
         fprintf(stdout, "INFO: Calculating RMSE%\n");
-        rmse[i] = calculatePercentRMSE<N>(fft_magnitude_golden, fft_magnitude_test);
-        fprintf(stdout, "INFO: RMSE%% = %lf%%\n\n", rmse[i]);
+        rmse[i] = calculatePercentRMSE<N>(fft_magnitude_golden, fft_magnitude_test); // Calculate RMSE percentage
+        fprintf(stdout, "INFO: RMSE%% = %lf%%\n\n", rmse[i]);                        // Print RMSE percentage
         fprintf(stdout, "#########################################################\n\n");
 
-        rmse_last = rmse[i];
+        rmse_last = rmse[i]; // Store last calculated RMSE
 
+        // Break if RMSE exceeds threshold
         if (rmse_last > rmse_threshold)
         {
             break;
@@ -114,14 +128,15 @@ int main()
     fclose(fp_test_output);
     fclose(fp_golden_output);
 
+    // Print test result
     if (rmse_last < rmse_threshold)
     {
         fprintf(stdout, "\nINFO: Test passed successfully!!!\n\n");
-        return 0;
+        return 0; // Return success
     }
     else
     {
         fprintf(stdout, "\nERROR: Test failed :(\n\n");
-        return 1;
+        return 1; // Return failure
     }
 }
