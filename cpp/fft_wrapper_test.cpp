@@ -16,6 +16,8 @@ int main()
     TC_FFT fft_input_lower[N / 2];
     TC_FFT fft_input_upper[N / 2];
     int input_signal_int;
+    TC_FFT fft_output_lower[N / 2];
+    TC_FFT fft_output_upper[N / 2];
     TC_FFT fft_output[N];
     double fft_magnitude_test[N];
     double fft_magnitude_golden[N];
@@ -66,7 +68,21 @@ int main()
             // Inputs
             input_signal_stream,
             // Outputs
-            fft_output);
+            fft_output_lower,
+            fft_output_upper);
+
+        // Map the result into a single array for simplification
+    OUTPUT_MAPPING_LOOP_LOWER:
+        for (int i = 0; i < N / 2; i++)
+        {
+            fft_output[i] = fft_output_lower[i];
+        }
+
+    OUTPUT_MAPPING_LOOP_UPPER:
+        for (int i = N / 2; i < N; i++)
+        {
+            fft_output[i] = fft_output_upper[i - N / 2];
+        }
 
         fprintf(stdout, "INFO: %d samples sent\n\n", samples_counter);
 

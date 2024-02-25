@@ -8,9 +8,9 @@ set_directive_top -name fft_wrapper "fft_wrapper"
 set_directive_dataflow "fft_wrapper"
 set_directive_interface -mode ap_ctrl_chain "fft_wrapper"
 set_directive_interface -mode axis -register_mode both -register=true "fft_wrapper" input_signal
-set_directive_interface -mode s_axilite -bundle axi4l_if -register=true "fft_wrapper" -clock cpu_clk
-set_directive_interface -mode s_axilite -bundle axi4l_if -register=true "fft_wrapper" fft_output
-set_directive_disaggregate "fft_wrapper" fft_output
+set_directive_interface -mode s_axilite -bundle axi4l_if -clock cpu_clk -register=true "fft_wrapper"
+set_directive_interface -mode s_axilite -bundle axi4l_if "fft_wrapper" fft_output_lower
+set_directive_interface -mode s_axilite -bundle axi4l_if "fft_wrapper" fft_output_upper
 set_directive_array_partition -type complete -dim 1 "fft_wrapper" fft_obj.fft_stage_lower
 set_directive_array_partition -type complete -dim 1 "fft_wrapper" fft_obj.fft_stage_upper
 set_directive_array_partition -type complete -dim 1 "fft_wrapper" fft_obj.precomputed_idx
