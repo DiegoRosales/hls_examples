@@ -32,12 +32,14 @@ print(f"INFO: Exported reference input data to {ref_input_filepath}")
 # Calculate FFT golden output using numpy.fft for analysis
 N = 256  # Number of samples for FFT
 num_iterations = 100  # Number of iterations for calculations
-golden_output_filepath = "../dat/fft_golden_output.dat"  # File path for storing golden output
+golden_output_filepath = (
+    "../dat/fft_golden_output.dat"  # File path for storing golden output
+)
 fft_golden_output = []
 
 # Calculate multiple iterations for completeness
 for i in range(num_iterations):
-    fft_golden_output.append(np.abs(np.fft.fft(mono_channel[0:N])))
+    fft_golden_output.append(np.abs(np.fft.fft(mono_channel[i * N : (i + 1) * N])))
 
 np.savetxt(
     golden_output_filepath,

@@ -20,7 +20,8 @@ int main()
     double fft_magnitude_test[N];
     double fft_magnitude_golden[N];
     int samples_counter;
-    double rmse;
+    double rmse_last;
+    double rmse[num_iterations];
     double fft_magnitude_golden_tmp;
 
     // Relevant paths
@@ -41,37 +42,55 @@ int main()
     fp_golden_output = fopen(golden_output_filepath.c_str(), "r");
 
     // Read dat file
-    fprintf(stdout, "\n\nINFO: Starting test\n");
-    fprintf(stdout, "INFO: Reading data file\n\n");
-
-    // Write input samples into input AXI-Stream channel
-    samples_counter = 0;
-    while (samples_counter < N)
+    fprintf(stdout, "\n\nINFO: Starting test\n\n");
+    fprintf(stdout, "#########################################################\n\n");
+    for (int i = 0; i < num_iterations; i++)
     {
-        fscanf(fp_ref_input, "%d\n", &input_signal_int);
-        input_signal = TI_INPUT_SIGNAL(input_signal_int);
-        input_signal_stream.write(input_signal);
-        samples_counter++;
-    }
+        fprintf(stdout, "INFO: Iteration number = %d\n\n", i);
+        fprintf(stdout, "INFO: Reading data file\n\n");
 
-    fprintf(stdout, "INFO: Sending samples to input channel and computing FFT\n");
+        // Write input samples into input AXI-Stream channel
+        samples_counter = 0;
+        while (samples_counter < N)
+        {
+            fscanf(fp_ref_input, "%d\n", &input_signal_int);
+            input_signal = TI_INPUT_SIGNAL(input_signal_int);
+            input_signal_stream.write(input_signal);
+            samples_counter++;
+        }
 
-    // Run HLS block wrapper function
-    fft_wrapper(
-        // Inputs
-        input_signal_stream,
-        // Outputs
-        fft_output);
+        fprintf(stdout, "INFO: Sending samples to input channel and computing FFT\n");
 
-    fprintf(stdout, "INFO: %d samples sent\n\n", samples_counter);
+        // Run HLS block wrapper function
+        fft_wrapper(
+            // Inputs
+            input_signal_stream,
+            // Outputs
+            fft_output);
 
-    // Read the golden output file and calculate the magnitude of the complex values obtained from the calculated FFT.
-    for (int i = 0; i < N; i++)
-    {
-        fscanf(fp_golden_output, "%lf\n", &fft_magnitude_golden_tmp);
-        fft_magnitude_golden[i] = fft_magnitude_golden_tmp;
-        fft_magnitude_test[i] = abs<TC_FFT>(fft_output[i]);
-        fprintf(fp_test_output, "%lf\n", fft_magnitude_test[i]); // Write test output in file for future use
+        fprintf(stdout, "INFO: %d samples sent\n\n", samples_counter);
+
+        // Read the golden output file and calculate the magnitude of the complex values obtained from the calculated FFT.
+        for (int j = 0; j < N; j++)
+        {
+            fscanf(fp_golden_output, "%lf\n", &fft_magnitude_golden_tmp);
+            fft_magnitude_golden[j] = fft_magnitude_golden_tmp;
+            fft_magnitude_test[j] = abs<TC_FFT>(fft_output[j]);
+            fprintf(fp_test_output, "%lf\n", fft_magnitude_test[j]); // Write test output in file for future use
+        }
+
+        // Calculate the Root Mean Squared Error (RMSE) percentage between the golden and the test data.
+        fprintf(stdout, "INFO: Calculating RMSE%\n");
+        rmse[i] = calculatePercentRMSE<N>(fft_magnitude_golden, fft_magnitude_test);
+        fprintf(stdout, "INFO: RMSE%% = %lf%%\n\n", rmse[i]);
+        fprintf(stdout, "#########################################################\n\n");
+
+        rmse_last = rmse[i];
+
+        if (rmse_last > rmse_threshold)
+        {
+            break;
+        }
     }
 
     // Close previously opened files
@@ -79,24 +98,14 @@ int main()
     fclose(fp_test_output);
     fclose(fp_golden_output);
 
-    // Calculate the Root Mean Squared Error (RMSE) percentage between the golden and the test data.
-    fprintf(stdout, "INFO: Calculating RMSE%\n");
-    rmse = calculatePercentRMSE<N>(fft_magnitude_golden, fft_magnitude_test);
-    fprintf(stdout, "INFO: RMSE%% = %lf%%\n\n", rmse);
-
-    // Define the accepted upper threshold for RMSE percentage.
-    double rmse_threshold = 1; // %
-
-    if (rmse < rmse_threshold)
+    if (rmse_last < rmse_threshold)
     {
-        fprintf(stdout, "INFO: Test passed successfully!!!\n\n");
-        return (0);
+        fprintf(stdout, "\nINFO: Test passed successfully!!!\n\n");
+        return 0;
     }
     else
     {
-        fprintf(stdout, "ERROR: Test failed :(\n\n");
-        return (1);
+        fprintf(stdout, "\nERROR: Test failed :(\n\n");
+        return 1;
     }
-
-    return 0;
 }

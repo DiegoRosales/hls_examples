@@ -1,3 +1,9 @@
+// Number of iterations for testbench
+static const int num_iterations = 20;
+
+// Define the accepted upper threshold for RMSE percentage.
+double rmse_threshold = 1; // %
+
 // Function to calculate the absolute value or modulus of a complex number.
 template <class TC>
 double abs(TC data)
