@@ -21,24 +21,12 @@
 template <int N, int n_clog2_c>
 class input_reorder_buffer
 {
-private:
-    TUI_SAMPLE_ARRAY_COUNT sample_count; // Keeps track of the number of samples processed
-
 public:
     // Constructor
-    input_reorder_buffer(void)
-    {
-        reset(); // Initialize sample_count
-    }
+    input_reorder_buffer(void) {}
 
     // Destructor
     ~input_reorder_buffer(void) {}
-
-    // Reset method to initialize the internal variables
-    void reset()
-    {
-        sample_count = 0; // Reset sample_count
-    }
 
     // Method to store input samples and reorder them for FFT computation
     void store_sample(
@@ -51,11 +39,11 @@ public:
         TI_INPUT_SIGNAL input_sample;       // Input sample
         TUI_SAMPLE_ARRAY_IDX idx_reordered; // Index for reordered sample
 
-        // Process samples until N samples are stored
-        while (sample_count < N)
+        // Read samples from input channel until N samples are stored
+        for (int i = 0; i < N; i++)
         {
             input_signal.read(input_sample); // Read input sample
-            idx_reordered = sample_count;    // Calculate reordered index
+            idx_reordered = TUI_SAMPLE_ARRAY_IDX(i);               // Calculate reordered index
             idx_reordered.reverse();         // Reverse bits for reordering
 
             // Store sample in appropriate half based on reordered index
@@ -69,10 +57,6 @@ public:
                 // Even indexes are stored in the lower half
                 fft_input_lower[idx_reordered >> 1] = TC_FFT(TR_FFT(input_sample), 0);
             }
-
-            sample_count++; // Increment sample count
         }
-
-        sample_count = 0; // Reset sample count for next iteration
     }
 };
