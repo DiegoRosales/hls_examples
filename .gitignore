@@ -80,3 +80,13 @@ settings.json
 dat/*.dat
 .idea/
 .vscode/
+
+# Ignore all files and directories inside vivado/
+!vivado/
+vivado/*
+!vivado/*/
+vivado/*/*
+!vivado/*/*.tcl
+!vivado/*/constraints/
+vivado/*/constraints/*
+!vivado/*/constraints/*.xdc

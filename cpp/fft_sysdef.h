@@ -21,7 +21,7 @@ static const int n_clog2_c = clog2_recursive(N); // clog2(N)
 
 // Types
 // Input signal represented as 24-bit signed integers
-typedef ap_int<24> TI_INPUT_SIGNAL;
+typedef ap_int<32> TI_INPUT_SIGNAL;
 // Twiddle factors represented as 16-bit fixed-point with 2 bits for the integer part
 typedef ap_fixed<16, 2> TR_TWIDDLE_FACTOR;
 typedef std::complex<TR_TWIDDLE_FACTOR> TC_TWIDDLE_FACTOR;
