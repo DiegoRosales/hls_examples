@@ -25,8 +25,8 @@ public:
     // Pre-computed twiddle factors
     TC_TWIDDLE_FACTOR twiddle_factors[N / 2];
     // Arrays to store intermediate FFT results for lower and upper stages
-    TC_FFT fft_stage_lower[n_clog2_c - 1][N / 2];
-    TC_FFT fft_stage_upper[n_clog2_c - 1][N / 2];
+    TC_FFT fft_stage_lower[n_clog2_c][N / 2];
+    TC_FFT fft_stage_upper[n_clog2_c][N / 2];
 
     // Structure to hold pre-computed indexes
     // Merging these arrays inside a struct allows Vitis HLS to use a single ROM to store the values
@@ -143,8 +143,7 @@ public:
         TC_FFT fft_input_lower[N / 2],
         TC_FFT fft_input_upper[N / 2],
         // Outputs
-        TC_FFT fft_output_lower[N / 2],
-        TC_FFT fft_output_upper[N / 2])
+        hls::stream<TC_FFT> &fft_output)
     {
 #pragma HLS dataflow
         // Calculate first stage
@@ -160,7 +159,7 @@ public:
 
         // Iterate over remaining stages
     BUTTERFLY_OPERATOR_LOOP:
-        for (int stage_num = 1; stage_num < n_clog2_c - 1; stage_num++)
+        for (int stage_num = 1; stage_num < n_clog2_c; stage_num++)
         {
 #pragma HLS unroll
             ButterflyOperator<TC_FFT, TC_FFT>(
@@ -174,15 +173,18 @@ public:
                 fft_stage_upper[stage_num]);
         }
 
-        // Calculate final stage
-        ButterflyOperator<TC_FFT, TC_FFT>(
-            // Inputs
-            fft_stage_lower[n_clog2_c - 2],
-            fft_stage_upper[n_clog2_c - 2],
-            precomputed_idx[n_clog2_c - 1],
-            n_clog2_c - 1,
-            // Outputs
-            fft_output_lower,
-            fft_output_upper);
+        // Send results using the AXI4-Stream channel
+    SEND_RESULTS_LOOP:
+        for (int i = 0; i < N; i++)
+        {
+            if (i < N / 2)
+            {
+                fft_output.write(fft_stage_lower[n_clog2_c - 1][i]);
+            }
+            else
+            {
+                fft_output.write(fft_stage_upper[n_clog2_c - 1][i - N / 2]);
+            }
+        }
     }
 };

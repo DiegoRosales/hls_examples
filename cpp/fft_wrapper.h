@@ -17,5 +17,4 @@ void fft_wrapper(
     // Inputs
     hls::stream<TI_INPUT_SIGNAL> &input_signal,
     // Outputs
-    TC_FFT fft_output_lower[N / 2],
-    TC_FFT fft_output_upper[N / 2]);
+    hls::stream<TC_FFT> &fft_output);

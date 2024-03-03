@@ -25,12 +25,11 @@ int main()
 {
     // Variable definitions
     hls::stream<TI_INPUT_SIGNAL> input_signal_stream; // Stream for input signal
+    hls::stream<TC_FFT> fft_output_stream;            // Stream for input signal
     TI_INPUT_SIGNAL input_sample;                     // Single input sample
     int input_sample_int;                             // Temporary storage for input sample integer value
     TC_FFT fft_input_lower[N / 2];                    // Lower part of FFT input
     TC_FFT fft_input_upper[N / 2];                    // Upper part of FFT input
-    TC_FFT fft_output_lower[N / 2];                   // Lower part of FFT output
-    TC_FFT fft_output_upper[N / 2];                   // Upper part of FFT output
     TC_FFT fft_output[N];                             // Full FFT output
     double fft_magnitude_test[N];                     // Magnitude of FFT output for testing
     double fft_magnitude_golden[N];                   // Magnitude of golden FFT output
@@ -81,20 +80,12 @@ int main()
             // Inputs
             input_signal_stream,
             // Outputs
-            fft_output_lower,
-            fft_output_upper);
+            fft_output_stream);
 
-    // Map the result into a single array for simplification
-    OUTPUT_MAPPING_LOOP_LOWER:
-        for (int i = 0; i < N / 2; i++)
+        // Map the result into a single array for simplification
+        for (int i = 0; i < N; i++)
         {
-            fft_output[i] = fft_output_lower[i];
-        }
-
-    OUTPUT_MAPPING_LOOP_UPPER:
-        for (int i = N / 2; i < N; i++)
-        {
-            fft_output[i] = fft_output_upper[i - N / 2];
+            fft_output[i] = fft_output_stream.read();
         }
 
         fprintf(stdout, "INFO: %d samples sent\n\n", samples_counter);

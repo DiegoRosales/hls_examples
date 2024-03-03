@@ -21,8 +21,7 @@ void fft_wrapper(
     // Inputs
     hls::stream<TI_INPUT_SIGNAL> &input_signal,
     // Outputs
-    TC_FFT fft_output_lower[N / 2],
-    TC_FFT fft_output_upper[N / 2])
+    hls::stream<TC_FFT> &fft_output)
 {
     // Objects instantiation
     static fft<N, n_clog2_c> fft_obj;
@@ -46,6 +45,5 @@ void fft_wrapper(
         fft_input_lower,
         fft_input_upper,
         // Outputs
-        fft_output_lower,
-        fft_output_upper);
+        fft_output);
 }
