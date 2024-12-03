@@ -19,9 +19,9 @@
 
 void fft_wrapper(
     // Inputs
-    hls::stream<TI_INPUT_SIGNAL> &input_signal,
+    hls::stream<TI_INPUT_SIGNAL> &input_signal_stream,
     // Outputs
-    hls::stream<TC_FFT> &fft_output)
+    hls::stream<TC_FFT_OUTPUT> &fft_output_stream)
 {
     // Objects instantiation
     static fft<N, n_clog2_c> fft_obj;
@@ -34,7 +34,7 @@ void fft_wrapper(
     // Store samples into FFT input memories
     input_reorder_buffer_obj.store_sample(
         // Inputs
-        input_signal,
+        input_signal_stream,
         // Outputs
         fft_input_lower,
         fft_input_upper);
@@ -45,5 +45,5 @@ void fft_wrapper(
         fft_input_lower,
         fft_input_upper,
         // Outputs
-        fft_output);
+        fft_output_stream);
 }

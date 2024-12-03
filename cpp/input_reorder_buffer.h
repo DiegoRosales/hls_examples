@@ -31,7 +31,7 @@ public:
     // Method to store input samples and reorder them for FFT computation
     void store_sample(
         // Inputs
-        hls::stream<TI_INPUT_SIGNAL> &input_signal, // Input stream of samples
+        hls::stream<TI_INPUT_SIGNAL> &input_signal_stream, // Input stream of samples
         // Outputs
         TC_FFT fft_input_lower[N / 2], // Array for lower half of FFT input
         TC_FFT fft_input_upper[N / 2]) // Array for upper half of FFT input
@@ -42,7 +42,7 @@ public:
         // Read samples from input channel until N samples are stored
         for (int i = 0; i < N; i++)
         {
-            input_signal.read(input_sample); // Read input sample
+            input_signal_stream.read(input_sample); // Read input sample
             idx_reordered = TUI_SAMPLE_ARRAY_IDX(i);               // Calculate reordered index
             idx_reordered.reverse();         // Reverse bits for reordering
 

@@ -8,6 +8,7 @@
 
 #pragma once
 #include "ap_fixed.h"
+#include "ap_axi_sdata.h"
 
 // Constexpr function to calculate the ceiling of the base-2 logarithm using recursion
 constexpr unsigned int clog2_recursive(unsigned int n, unsigned int p = 0)
@@ -28,6 +29,7 @@ typedef std::complex<TR_TWIDDLE_FACTOR> TC_TWIDDLE_FACTOR;
 // FFT values represented as 32-bit fixed-point with 24 bits for the integer part
 typedef ap_fixed<32, 24> TR_FFT;
 typedef std::complex<TR_FFT> TC_FFT;
+typedef hls::axis<TC_FFT> TC_FFT_OUTPUT;
 // Indexes represented as unsigned integers
 typedef ap_uint<n_clog2_c> TUI_SAMPLE_ARRAY_IDX;
 // Boolean type

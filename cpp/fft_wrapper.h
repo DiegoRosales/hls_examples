@@ -15,6 +15,6 @@
 
 void fft_wrapper(
     // Inputs
-    hls::stream<TI_INPUT_SIGNAL> &input_signal,
+    hls::stream<TI_INPUT_SIGNAL> &input_signal_stream,
     // Outputs
-    hls::stream<TC_FFT> &fft_output);
+    hls::stream<TC_FFT_OUTPUT> &fft_output_stream);

@@ -143,9 +143,13 @@ public:
         TC_FFT fft_input_lower[N / 2],
         TC_FFT fft_input_upper[N / 2],
         // Outputs
-        hls::stream<TC_FFT> &fft_output)
+        hls::stream<TC_FFT_OUTPUT> &fft_output_stream)
     {
 #pragma HLS dataflow
+
+        TC_FFT_OUTPUT fft_output;
+        fft_output.keep = 0xFF; // Enable all bits
+
         // Calculate first stage
         ButterflyOperator<TC_FFT, TC_FFT>(
             // Inputs
@@ -179,12 +183,21 @@ public:
         {
             if (i < N / 2)
             {
-                fft_output.write(fft_stage_lower[n_clog2_c - 1][i]);
+                fft_output.data = fft_stage_lower[n_clog2_c - 1][i];
             }
             else
             {
-                fft_output.write(fft_stage_upper[n_clog2_c - 1][i - N / 2]);
+                fft_output.data = fft_stage_upper[n_clog2_c - 1][i - N / 2];
             }
+            if (i == N - 1)
+            {
+                fft_output.last = 1;
+            }
+            else
+            {
+                fft_output.last = 0;
+            }
+            fft_output_stream.write(fft_output);
         }
     }
 };

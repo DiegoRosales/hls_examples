@@ -25,12 +25,12 @@ int main()
 {
     // Variable definitions
     hls::stream<TI_INPUT_SIGNAL> input_signal_stream; // Stream for input signal
-    hls::stream<TC_FFT> fft_output_stream;            // Stream for input signal
+    hls::stream<TC_FFT_OUTPUT> fft_output_stream;     // Stream for input signal
     TI_INPUT_SIGNAL input_sample;                     // Single input sample
     int input_sample_int;                             // Temporary storage for input sample integer value
     TC_FFT fft_input_lower[N / 2];                    // Lower part of FFT input
     TC_FFT fft_input_upper[N / 2];                    // Upper part of FFT input
-    TC_FFT fft_output[N];                             // Full FFT output
+    TC_FFT_OUTPUT fft_output[N];                      // Full FFT output
     double fft_magnitude_test[N];                     // Magnitude of FFT output for testing
     double fft_magnitude_golden[N];                   // Magnitude of golden FFT output
     int samples_counter;                              // Counter for the number of samples read
@@ -82,10 +82,14 @@ int main()
             // Outputs
             fft_output_stream);
 
+        int j = 0;
+        bool last_packet = 0;
         // Map the result into a single array for simplification
-        for (int i = 0; i < N; i++)
+        while (last_packet == 0)
         {
-            fft_output[i] = fft_output_stream.read();
+            fft_output[j] = fft_output_stream.read();
+            last_packet = fft_output[j].last;
+            j++;
         }
 
         fprintf(stdout, "INFO: %d samples sent\n\n", samples_counter);
@@ -95,7 +99,7 @@ int main()
         {
             fscanf(fp_golden_output, "%lf\n", &fft_magnitude_golden_tmp); // Read golden FFT magnitude from file
             fft_magnitude_golden[j] = fft_magnitude_golden_tmp;           // Store golden FFT magnitude
-            fft_magnitude_test[j] = abs<TC_FFT>(fft_output[j]);           // Calculate magnitude of test FFT output
+            fft_magnitude_test[j] = abs<TC_FFT>(fft_output[j].data);      // Calculate magnitude of test FFT output
             fprintf(fp_test_output, "%lf\n", fft_magnitude_test[j]);      // Write test FFT magnitude to file
         }
 
