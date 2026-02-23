@@ -74,6 +74,8 @@ venv
 sim_build
 hls_project
 hls/**/vitis_project/
+hls/**/_ide/
+hls/**/.gitignore
 
 # Misc
 settings.json

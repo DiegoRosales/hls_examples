@@ -1,8 +1,8 @@
 
 .PHONY: hls
-hls:
-	cd hls;\
-	vitis_hls -f run_hls.tcl fft_wrapper
+%_build_hls:
+	cd hls/$*_wrapper;\
+	vitis-run --mode hls --tcl build_hls.tcl
 
 test_fft:
 	cd cocotb/fft_test && \
@@ -20,4 +20,3 @@ rtl_integ:
 	-mode batch \
 	-source scripts/run.tcl \
 	-tclargs -cfg cfg/fft_demo.cfg.json -stages "INTEG"
-

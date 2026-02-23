@@ -1,6 +1,7 @@
 # %% Import libraries
 import numpy as np
 from scipy.io import wavfile
+import os
 
 # %% Set sample audio file
 wav_dir = "../misc/"
@@ -18,7 +19,8 @@ else:
 
 # Export wav file as a dat file
 # Define the file path where you want to save the DAT file
-ref_input_filepath = "../dat/" + wav_filename + ".dat"
+ref_input_filepath = f"../dat/{wav_filename}.dat"
+os.makedirs(os.path.dirname(ref_input_filepath), exist_ok=True)
 # Export the array to the DAT file with each element on a new line
 np.savetxt(
     ref_input_filepath,
