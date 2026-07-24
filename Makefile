@@ -20,3 +20,6 @@ rtl_integ:
 	-mode batch \
 	-source scripts/run.tcl \
 	-tclargs -cfg cfg/fft_demo.cfg.json -stages "INTEG"
+
+generate_dat:
+	cd python && python ./generate_dat_files.py
