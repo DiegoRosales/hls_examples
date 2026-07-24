@@ -1,6 +1,6 @@
 
 .PHONY: hls
-%_build_hls:
+%_build_hls: generate_dat
 	cd hls/$*_wrapper;\
 	vitis-run --mode hls --tcl build_hls.tcl
 
@@ -23,3 +23,7 @@ rtl_integ:
 
 generate_dat:
 	cd python && python ./generate_dat_files.py
+
+build_fft_fpga: fft_build_hls
+	$(MAKE) rtl_package
+	$(MAKE) rtl_integ
