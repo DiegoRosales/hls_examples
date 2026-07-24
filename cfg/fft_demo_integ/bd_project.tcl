@@ -20,12 +20,18 @@ set script_folder [_tcl::get_script_folder]
 ################################################################
 # Check if script is running in correct Vivado version.
 ################################################################
-set scripts_vivado_version 2023.1
+set scripts_vivado_version 2024.1
 set current_vivado_version [version -short]
 
 if { [string first $scripts_vivado_version $current_vivado_version] == -1 } {
    puts ""
-   catch {common::send_gid_msg -ssname BD::TCL -id 2041 -severity "ERROR" "This script was generated using Vivado <$scripts_vivado_version> and is being run in <$current_vivado_version> of Vivado. Please run the script in Vivado <$scripts_vivado_version> then open the design in Vivado <$current_vivado_version>. Upgrade the design by running \"Tools => Report => Report IP Status...\", then run write_bd_tcl to create an updated script."}
+   if { [string compare $scripts_vivado_version $current_vivado_version] > 0 } {
+      catch {common::send_gid_msg -ssname BD::TCL -id 2042 -severity "ERROR" " This script was generated using Vivado <$scripts_vivado_version> and is being run in <$current_vivado_version> of Vivado. Sourcing the script failed since it was created with a future version of Vivado."}
+
+   } else {
+     catch {common::send_gid_msg -ssname BD::TCL -id 2041 -severity "ERROR" "This script was generated using Vivado <$scripts_vivado_version> and is being run in <$current_vivado_version> of Vivado. Please run the script in Vivado <$scripts_vivado_version> then open the design in Vivado <$current_vivado_version>. Upgrade the design by running \"Tools => Report => Report IP Status...\", then run write_bd_tcl to create an updated script."}
+
+   }
 
    return 1
 }
@@ -665,27 +671,27 @@ proc create_root_design { parentCell } {
   connect_bd_intf_net -intf_net axi_gpio_0_GPIO [get_bd_intf_ports SW] [get_bd_intf_pins axi_gpio_0/GPIO]
   connect_bd_intf_net -intf_net axi_gpio_0_GPIO2 [get_bd_intf_ports BTN] [get_bd_intf_pins axi_gpio_0/GPIO2]
   connect_bd_intf_net -intf_net sampler_LED [get_bd_intf_ports LED] [get_bd_intf_pins sampler/LED]
-  connect_bd_intf_net -intf_net sampler_axis_interface_master [get_bd_intf_pins fft_wrapper_0/input_signal] [get_bd_intf_pins sampler/axis_interface_master]
+  connect_bd_intf_net -intf_net sampler_axis_interface_master [get_bd_intf_pins sampler/axis_interface_master] [get_bd_intf_pins fft_wrapper_0/input_signal_stream]
   connect_bd_intf_net -intf_net sampler_codec_i2s [get_bd_intf_ports codec_i2s] [get_bd_intf_pins sampler/codec_i2s]
   connect_bd_intf_net -intf_net zynq_cpu_DDR [get_bd_intf_ports DDR] [get_bd_intf_pins zynq_cpu/DDR]
   connect_bd_intf_net -intf_net zynq_cpu_FIXED_IO [get_bd_intf_ports FIXED_IO] [get_bd_intf_pins zynq_cpu/FIXED_IO]
-  connect_bd_intf_net -intf_net zynq_cpu_M00_AXI [get_bd_intf_pins fft_wrapper_0/s_axi_fft_wrapper] [get_bd_intf_pins zynq_cpu/M00_AXI]
+  connect_bd_intf_net -intf_net zynq_cpu_M00_AXI [get_bd_intf_pins zynq_cpu/M00_AXI] [get_bd_intf_pins fft_wrapper_0/s_axi_axi4l_if]
   connect_bd_intf_net -intf_net zynq_cpu_M01_AXI [get_bd_intf_pins zynq_cpu/M01_AXI] [get_bd_intf_pins sampler/axi4_lite_interface]
-  connect_bd_intf_net -intf_net zynq_cpu_M02_AXI [get_bd_intf_pins axi_gpio_0/S_AXI] [get_bd_intf_pins zynq_cpu/M02_AXI]
+  connect_bd_intf_net -intf_net zynq_cpu_M02_AXI [get_bd_intf_pins zynq_cpu/M02_AXI] [get_bd_intf_pins axi_gpio_0/S_AXI]
 
   # Create port connections
-  connect_bd_net -net In1_1 [get_bd_pins sampler/DOWNSTREAM_almost_empty] [get_bd_pins zynq_cpu/In1]
   connect_bd_net -net Net [get_bd_ports i2c_scl] [get_bd_pins sampler/i2c_scl]
   connect_bd_net -net Net1 [get_bd_ports i2c_sda] [get_bd_pins sampler/i2c_sda]
   connect_bd_net -net axi_gpio_0_ip2intc_irpt [get_bd_pins axi_gpio_0/ip2intc_irpt] [get_bd_pins zynq_cpu/In0]
   connect_bd_net -net board_clk_1 [get_bd_ports board_clk] [get_bd_pins sampler/board_clk]
-  connect_bd_net -net zynq_cpu_FCLK_CLK0 [get_bd_pins zynq_cpu/FCLK_CLK0] [get_bd_pins sampler/axi_clk] [get_bd_pins axi_gpio_0/s_axi_aclk] [get_bd_pins fft_wrapper_0/ap_clk]
-  connect_bd_net -net zynq_cpu_peripheral_aresetn [get_bd_pins zynq_cpu/peripheral_aresetn] [get_bd_pins sampler/s00_axi_aresetn] [get_bd_pins axi_gpio_0/s_axi_aresetn] [get_bd_pins fft_wrapper_0/ap_rst_n]
+  connect_bd_net -net sampler_DOWNSTREAM_almost_empty [get_bd_pins sampler/DOWNSTREAM_almost_empty] [get_bd_pins zynq_cpu/In1]
+  connect_bd_net -net zynq_cpu_FCLK_CLK0 [get_bd_pins zynq_cpu/FCLK_CLK0] [get_bd_pins axi_gpio_0/s_axi_aclk] [get_bd_pins fft_wrapper_0/clk] [get_bd_pins sampler/axi_clk] [get_bd_pins fft_wrapper_0/ap_clk]
+  connect_bd_net -net zynq_cpu_peripheral_aresetn [get_bd_pins zynq_cpu/peripheral_aresetn] [get_bd_pins axi_gpio_0/s_axi_aresetn] [get_bd_pins fft_wrapper_0/ap_rst_n_clk] [get_bd_pins fft_wrapper_0/ap_rst_n] [get_bd_pins sampler/s00_axi_aresetn]
 
   # Create address segments
   assign_bd_address -offset 0x41200000 -range 0x00010000 -target_address_space [get_bd_addr_spaces zynq_cpu/zynq/Data] [get_bd_addr_segs axi_gpio_0/S_AXI/Reg] -force
   assign_bd_address -offset 0x43C00000 -range 0x00010000 -target_address_space [get_bd_addr_spaces zynq_cpu/zynq/Data] [get_bd_addr_segs sampler/codec_controller/axi4_lite_interface_memory_map/codec_controller_regmap] -force
-  assign_bd_address -offset 0x40000000 -range 0x00010000 -target_address_space [get_bd_addr_spaces zynq_cpu/zynq/Data] [get_bd_addr_segs fft_wrapper_0/s_axi_fft_wrapper/Reg] -force
+  assign_bd_address -offset 0x40000000 -range 0x00010000 -target_address_space [get_bd_addr_spaces zynq_cpu/zynq/Data] [get_bd_addr_segs fft_wrapper_0/s_axi_axi4l_if/Reg] -force
 
 
   # Restore current instance
