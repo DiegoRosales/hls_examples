@@ -4,7 +4,7 @@ cocotbext-axi==0.1.24
 contourpy==1.1.1
 cycler==0.11.0
 find-libpython==0.3.0
-fonttools==4.42.1
+fonttools==4.60.2
 kiwisolver==1.4.5
 matplotlib==3.8.0
 numpy==1.26.0
