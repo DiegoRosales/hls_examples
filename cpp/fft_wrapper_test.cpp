@@ -51,9 +51,24 @@ int main()
     FILE *fp_golden_output; // Pointer to golden output data file
 
     // Open relevant files
-    fp_ref_input = fopen(ref_input_filepath.c_str(), "r");         // Open input data file in read mode
-    fp_test_output = fopen(test_output_filepath.c_str(), "w");     // Open test output data file in write mode
-    fp_golden_output = fopen(golden_output_filepath.c_str(), "r"); // Open golden output data file in read mode
+    fp_ref_input = fopen(ref_input_filepath.c_str(), "r");
+    if (!fp_ref_input) {
+        fprintf(stderr, "ERROR: Could not open input file: %s\n", ref_input_filepath.c_str());
+        return 1;
+    }
+    fp_test_output = fopen(test_output_filepath.c_str(), "w");
+    if (!fp_test_output) {
+        fprintf(stderr, "ERROR: Could not open test output file: %s\n", test_output_filepath.c_str());
+        fclose(fp_ref_input);
+        return 1;
+    }
+    fp_golden_output = fopen(golden_output_filepath.c_str(), "r");
+    if (!fp_golden_output) {
+        fprintf(stderr, "ERROR: Could not open golden output file: %s\n", golden_output_filepath.c_str());
+        fclose(fp_ref_input);
+        fclose(fp_test_output);
+        return 1;
+    }
 
     // Read data from the input file
     fprintf(stdout, "\n\nINFO: Starting test\n\n");
