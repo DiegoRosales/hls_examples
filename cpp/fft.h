@@ -23,7 +23,7 @@ class fft
 {
 public:
     // Pre-computed twiddle factors
-    TC_TWIDDLE_FACTOR twiddle_factors[N / 2];
+    TC_TWIDDLE_FACTOR twiddle_factors[n_clog2_c][N / 2];
     // Arrays to store intermediate FFT results for lower and upper stages
     TC_FFT fft_stage_lower[n_clog2_c][N / 2];
     TC_FFT fft_stage_upper[n_clog2_c][N / 2];
@@ -69,10 +69,15 @@ public:
         }
 
         // Initialize the twiddle factors and arrays
+        // We need n_clog2_c ROMs to store the same values in order to enable
+        // true parallel throughput across the entire DATAFLOW pipeline.
     INIT_TWIDDLE_FACTORS:
-        for (int k = 0; k < N / 2; k++)
+        for (int stage = 0; stage < n_clog2_c; stage++)
         {
-            twiddle_factors[k] = computeTwiddleFactor(k);
+            for (int k = 0; k < N / 2; k++)
+            {
+                twiddle_factors[stage][k] = computeTwiddleFactor(k);
+            }
         }
     }
 
@@ -91,6 +96,7 @@ public:
         T_IN data_in_lower[N / 2],
         T_IN data_in_upper[N / 2],
         T_PRECOMPUTED_INDEXES precomputed_idx[N / 2],
+        TC_TWIDDLE_FACTOR twiddle_factors_stage[N / 2],
         int stage_num,
         // Outputs
         T_OUT data_out_lower[N / 2],
@@ -103,7 +109,7 @@ public:
     BUTTERFLY_MULTIPLICATION:
         for (int i = 0; i < N / 2; i++)
         {
-#pragma HLS pipeline II = 1
+#pragma HLS PIPELINE II=1
             T_IN data_lower_swapped;
             T_IN data_upper_swapped;
             TUI_SAMPLE_ARRAY_IDX idx = TUI_SAMPLE_ARRAY_IDX(i);
@@ -121,7 +127,7 @@ public:
                 data_upper_swapped = data_in_upper[precomputed_idx[i].idx_upper];
             }
 
-            TC_FFT product = comp_mult_three_dsp<TC_TWIDDLE_FACTOR, TC_FFT, TC_FFT>(twiddle_factors[precomputed_idx[i].twiddle_factor_idx], data_upper_swapped);
+            TC_FFT product = comp_mult_three_dsp<TC_TWIDDLE_FACTOR, TC_FFT, TC_FFT>(twiddle_factors_stage[precomputed_idx[i].twiddle_factor_idx], data_upper_swapped);
 
             // Swap output data
             if (swap_post_stage)
@@ -137,6 +143,30 @@ public:
         }
     }
 
+    void send_results(
+        // Inputs
+        TC_FFT stage_lower[N / 2],
+        TC_FFT stage_upper[N / 2],
+        // Outputs
+        hls::stream<TC_FFT_OUTPUT> &fft_output_stream)
+    {
+        TC_FFT_OUTPUT fft_output;
+        fft_output.keep = 0xFF;
+
+    SEND_RESULTS_LOOP:
+        for (int i = 0; i < N; i++)
+        {
+#pragma HLS PIPELINE II=1
+            if (i < N / 2)
+                fft_output.data = stage_lower[i];
+            else
+                fft_output.data = stage_upper[i - N / 2];
+
+            fft_output.last = (i == N - 1) ? 1 : 0;
+            fft_output_stream.write(fft_output);
+        }
+    }
+
     // Method to perform FFT computation
     void doFFT(
         // Inputs
@@ -145,17 +175,14 @@ public:
         // Outputs
         hls::stream<TC_FFT_OUTPUT> &fft_output_stream)
     {
-#pragma HLS dataflow
-
-        TC_FFT_OUTPUT fft_output;
-        fft_output.keep = 0xFF; // Enable all bits
-
+#pragma HLS DATAFLOW
         // Calculate first stage
         ButterflyOperator<TC_FFT, TC_FFT>(
             // Inputs
             fft_input_lower,
             fft_input_upper,
             precomputed_idx[0],
+            twiddle_factors[0],
             0,
             // Outputs
             fft_stage_lower[0],
@@ -171,33 +198,19 @@ public:
                 fft_stage_lower[stage_num - 1],
                 fft_stage_upper[stage_num - 1],
                 precomputed_idx[stage_num],
+                twiddle_factors[stage_num],
                 stage_num,
                 // Outputs
                 fft_stage_lower[stage_num],
                 fft_stage_upper[stage_num]);
         }
 
-        // Send results using the AXI4-Stream channel
-    SEND_RESULTS_LOOP:
-        for (int i = 0; i < N; i++)
-        {
-            if (i < N / 2)
-            {
-                fft_output.data = fft_stage_lower[n_clog2_c - 1][i];
-            }
-            else
-            {
-                fft_output.data = fft_stage_upper[n_clog2_c - 1][i - N / 2];
-            }
-            if (i == N - 1)
-            {
-                fft_output.last = 1;
-            }
-            else
-            {
-                fft_output.last = 0;
-            }
-            fft_output_stream.write(fft_output);
-        }
+        // Streaming Output process call
+        send_results(
+            // Inputs
+            fft_stage_lower[n_clog2_c - 1],
+            fft_stage_upper[n_clog2_c - 1],
+            // Outputs
+            fft_output_stream);
     }
 };

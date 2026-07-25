@@ -38,6 +38,7 @@ $RECYCLE.BIN/
 .TemporaryItems
 .Trashes
 .VolumeIcon.icns
+.clangd
 
 # Directories potentially created on remote AFP share
 .AppleDB
@@ -75,7 +76,7 @@ sim_build
 hls_project
 hls/**/vitis_project/
 hls/**/_ide/
-hls/**/.gitignore
+hls/**/.*
 
 # Misc
 settings.json
