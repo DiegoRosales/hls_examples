@@ -23,6 +23,7 @@ void fft_wrapper(
     // Outputs
     hls::stream<TC_FFT_OUTPUT> &fft_output_stream)
 {
+#pragma HLS DATAFLOW
     // Objects instantiation
     static fft<N, n_clog2_c> fft_obj;
     static input_reorder_buffer<N, n_clog2_c> input_reorder_buffer_obj;

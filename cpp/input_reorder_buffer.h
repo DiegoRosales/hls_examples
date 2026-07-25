@@ -42,6 +42,7 @@ public:
         // Read samples from input channel until N samples are stored
         for (int i = 0; i < N; i++)
         {
+#pragma HLS PIPELINE II=1
             input_signal_stream.read(input_sample); // Read input sample
             idx_reordered = TUI_SAMPLE_ARRAY_IDX(i);               // Calculate reordered index
             idx_reordered.reverse();         // Reverse bits for reordering

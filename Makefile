@@ -10,7 +10,7 @@ SHELL := bash
 DAT_SRCS    := python/generate_dat_files.py misc/file_example_WAV_1MG.wav
 
 HLS_SRCS    := $(wildcard hls/cpp/fft*.cpp hls/cpp/fft*.h) \
-               hls/fft_wrapper/build_hls.tcl \
+               hls/fft_wrapper/hls_build.tcl \
                hls/fft_wrapper/directives.tcl \
                hls/fft_wrapper/config.tcl
 
@@ -51,7 +51,7 @@ $(DAT_FILES) &: $(DAT_SRCS)
 ## Vitis HLS: C-sim, synth, cosim and IP export for the FFT wrapper.
 $(HLS_EXPORT): $(HLS_SRCS) $(DAT_WAV)
 	cd hls/fft_wrapper && \
-	vitis-run --mode hls --tcl build_hls.tcl
+	vitis-run --mode hls --tcl hls_build.tcl
 
 ## Vivado PACK: package the HLS IP as a reusable core.
 $(PACKAGED_CORE): $(HLS_EXPORT) $(CFG) $(SCRIPT_SRCS)
