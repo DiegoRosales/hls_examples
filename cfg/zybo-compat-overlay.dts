@@ -1,0 +1,9 @@
+/*
+ * sdtgen derives the root compatible from the Vivado board name ("zybo"),
+ * producing only "xlnx,zybo". The Zynq machine driver matches on
+ * "xlnx,zynq-7000", so without it the SLCR iomap never runs and
+ * clk_register_zynq_pll crashes with a NULL dereference at boot.
+ */
+/ {
+	compatible = "xlnx,zybo", "xlnx,zynq-7000";
+};

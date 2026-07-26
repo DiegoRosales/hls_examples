@@ -20,7 +20,7 @@ set script_folder [_tcl::get_script_folder]
 ################################################################
 # Check if script is running in correct Vivado version.
 ################################################################
-set scripts_vivado_version 2024.1
+set scripts_vivado_version 2025.2
 set current_vivado_version [version -short]
 
 if { [string first $scripts_vivado_version $current_vivado_version] == -1 } {
@@ -508,13 +508,31 @@ proc create_hier_cell_zynq_cpu { parentCell nameHier } {
   connect_bd_intf_net -intf_net axi_interconnect_zynq_M01_AXI [get_bd_intf_pins M01_AXI] [get_bd_intf_pins axi_interconnect_zynq/M01_AXI]
 
   # Create port connections
-  connect_bd_net -net In0_1 [get_bd_pins In0] [get_bd_pins intr_concat_zynq/In0]
-  connect_bd_net -net In1_1 [get_bd_pins In1] [get_bd_pins intr_concat_zynq/In1]
-  connect_bd_net -net cpu_reset_gen_interconnect_aresetn [get_bd_pins cpu_reset_gen/interconnect_aresetn] [get_bd_pins axi_interconnect_zynq/ARESETN]
-  connect_bd_net -net cpu_reset_gen_peripheral_aresetn [get_bd_pins cpu_reset_gen/peripheral_aresetn] [get_bd_pins axi_interconnect_zynq/M00_ARESETN] [get_bd_pins axi_interconnect_zynq/M01_ARESETN] [get_bd_pins axi_interconnect_zynq/M02_ARESETN] [get_bd_pins axi_interconnect_zynq/S00_ARESETN] [get_bd_pins peripheral_aresetn]
-  connect_bd_net -net intr_concat_zynq_dout [get_bd_pins intr_concat_zynq/dout] [get_bd_pins zynq/IRQ_F2P]
-  connect_bd_net -net zynq_FCLK_CLK0 [get_bd_pins zynq/FCLK_CLK0] [get_bd_pins FCLK_CLK0] [get_bd_pins axi_interconnect_zynq/ACLK] [get_bd_pins axi_interconnect_zynq/M00_ACLK] [get_bd_pins axi_interconnect_zynq/M01_ACLK] [get_bd_pins axi_interconnect_zynq/M02_ACLK] [get_bd_pins axi_interconnect_zynq/S00_ACLK] [get_bd_pins zynq/M_AXI_GP0_ACLK] [get_bd_pins cpu_reset_gen/slowest_sync_clk]
-  connect_bd_net -net zynq_FCLK_RESET0_N [get_bd_pins zynq/FCLK_RESET0_N] [get_bd_pins cpu_reset_gen/ext_reset_in]
+  connect_bd_net -net In0_1  [get_bd_pins In0] \
+  [get_bd_pins intr_concat_zynq/In0]
+  connect_bd_net -net In1_1  [get_bd_pins In1] \
+  [get_bd_pins intr_concat_zynq/In1]
+  connect_bd_net -net cpu_reset_gen_interconnect_aresetn  [get_bd_pins cpu_reset_gen/interconnect_aresetn] \
+  [get_bd_pins axi_interconnect_zynq/ARESETN]
+  connect_bd_net -net cpu_reset_gen_peripheral_aresetn  [get_bd_pins cpu_reset_gen/peripheral_aresetn] \
+  [get_bd_pins axi_interconnect_zynq/M00_ARESETN] \
+  [get_bd_pins axi_interconnect_zynq/M01_ARESETN] \
+  [get_bd_pins axi_interconnect_zynq/M02_ARESETN] \
+  [get_bd_pins axi_interconnect_zynq/S00_ARESETN] \
+  [get_bd_pins peripheral_aresetn]
+  connect_bd_net -net intr_concat_zynq_dout  [get_bd_pins intr_concat_zynq/dout] \
+  [get_bd_pins zynq/IRQ_F2P]
+  connect_bd_net -net zynq_FCLK_CLK0  [get_bd_pins zynq/FCLK_CLK0] \
+  [get_bd_pins FCLK_CLK0] \
+  [get_bd_pins axi_interconnect_zynq/ACLK] \
+  [get_bd_pins axi_interconnect_zynq/M00_ACLK] \
+  [get_bd_pins axi_interconnect_zynq/M01_ACLK] \
+  [get_bd_pins axi_interconnect_zynq/M02_ACLK] \
+  [get_bd_pins axi_interconnect_zynq/S00_ACLK] \
+  [get_bd_pins zynq/M_AXI_GP0_ACLK] \
+  [get_bd_pins cpu_reset_gen/slowest_sync_clk]
+  connect_bd_net -net zynq_FCLK_RESET0_N  [get_bd_pins zynq/FCLK_RESET0_N] \
+  [get_bd_pins cpu_reset_gen/ext_reset_in]
 
   # Restore current instance
   current_bd_instance $oldCurInst
@@ -585,13 +603,21 @@ proc create_hier_cell_sampler { parentCell nameHier } {
   connect_bd_intf_net -intf_net axi4_lite_interface_1 [get_bd_intf_pins axi4_lite_interface] [get_bd_intf_pins codec_controller/axi4_lite_interface]
 
   # Create port connections
-  connect_bd_net -net Net [get_bd_pins i2c_scl] [get_bd_pins codec_controller/i2c_scl]
-  connect_bd_net -net Net1 [get_bd_pins i2c_sda] [get_bd_pins codec_controller/i2c_sda]
-  connect_bd_net -net axi_clk_1 [get_bd_pins axi_clk] [get_bd_pins codec_controller/axi_clk]
-  connect_bd_net -net board_clk_1 [get_bd_pins board_clk] [get_bd_pins codec_controller/board_clk]
-  connect_bd_net -net codec_controller_DOWNSTREAM_almost_empty [get_bd_pins codec_controller/DOWNSTREAM_almost_empty] [get_bd_pins DOWNSTREAM_almost_empty]
-  connect_bd_net -net s00_axi_aresetn_1 [get_bd_pins s00_axi_aresetn] [get_bd_pins codec_controller/s00_axi_aresetn] [get_bd_pins codec_controller/axis_aresetn]
-  connect_bd_net -net xlconstant_0_dout [get_bd_pins const1/dout] [get_bd_pins codec_controller/reset_n]
+  connect_bd_net -net Net  [get_bd_pins i2c_scl] \
+  [get_bd_pins codec_controller/i2c_scl]
+  connect_bd_net -net Net1  [get_bd_pins i2c_sda] \
+  [get_bd_pins codec_controller/i2c_sda]
+  connect_bd_net -net axi_clk_1  [get_bd_pins axi_clk] \
+  [get_bd_pins codec_controller/axi_clk]
+  connect_bd_net -net board_clk_1  [get_bd_pins board_clk] \
+  [get_bd_pins codec_controller/board_clk]
+  connect_bd_net -net codec_controller_DOWNSTREAM_almost_empty  [get_bd_pins codec_controller/DOWNSTREAM_almost_empty] \
+  [get_bd_pins DOWNSTREAM_almost_empty]
+  connect_bd_net -net s00_axi_aresetn_1  [get_bd_pins s00_axi_aresetn] \
+  [get_bd_pins codec_controller/s00_axi_aresetn] \
+  [get_bd_pins codec_controller/axis_aresetn]
+  connect_bd_net -net xlconstant_0_dout  [get_bd_pins const1/dout] \
+  [get_bd_pins codec_controller/reset_n]
 
   # Restore current instance
   current_bd_instance $oldCurInst
@@ -680,13 +706,26 @@ proc create_root_design { parentCell } {
   connect_bd_intf_net -intf_net zynq_cpu_M02_AXI [get_bd_intf_pins zynq_cpu/M02_AXI] [get_bd_intf_pins axi_gpio_0/S_AXI]
 
   # Create port connections
-  connect_bd_net -net Net [get_bd_ports i2c_scl] [get_bd_pins sampler/i2c_scl]
-  connect_bd_net -net Net1 [get_bd_ports i2c_sda] [get_bd_pins sampler/i2c_sda]
-  connect_bd_net -net axi_gpio_0_ip2intc_irpt [get_bd_pins axi_gpio_0/ip2intc_irpt] [get_bd_pins zynq_cpu/In0]
-  connect_bd_net -net board_clk_1 [get_bd_ports board_clk] [get_bd_pins sampler/board_clk]
-  connect_bd_net -net sampler_DOWNSTREAM_almost_empty [get_bd_pins sampler/DOWNSTREAM_almost_empty] [get_bd_pins zynq_cpu/In1]
-  connect_bd_net -net zynq_cpu_FCLK_CLK0 [get_bd_pins zynq_cpu/FCLK_CLK0] [get_bd_pins axi_gpio_0/s_axi_aclk] [get_bd_pins fft_wrapper_0/clk] [get_bd_pins sampler/axi_clk] [get_bd_pins fft_wrapper_0/ap_clk]
-  connect_bd_net -net zynq_cpu_peripheral_aresetn [get_bd_pins zynq_cpu/peripheral_aresetn] [get_bd_pins axi_gpio_0/s_axi_aresetn] [get_bd_pins fft_wrapper_0/ap_rst_n_clk] [get_bd_pins fft_wrapper_0/ap_rst_n] [get_bd_pins sampler/s00_axi_aresetn]
+  connect_bd_net -net Net  [get_bd_ports i2c_scl] \
+  [get_bd_pins sampler/i2c_scl]
+  connect_bd_net -net Net1  [get_bd_ports i2c_sda] \
+  [get_bd_pins sampler/i2c_sda]
+  connect_bd_net -net axi_gpio_0_ip2intc_irpt  [get_bd_pins axi_gpio_0/ip2intc_irpt] \
+  [get_bd_pins zynq_cpu/In0]
+  connect_bd_net -net board_clk_1  [get_bd_ports board_clk] \
+  [get_bd_pins sampler/board_clk]
+  connect_bd_net -net sampler_DOWNSTREAM_almost_empty  [get_bd_pins sampler/DOWNSTREAM_almost_empty] \
+  [get_bd_pins zynq_cpu/In1]
+  connect_bd_net -net zynq_cpu_FCLK_CLK0  [get_bd_pins zynq_cpu/FCLK_CLK0] \
+  [get_bd_pins axi_gpio_0/s_axi_aclk] \
+  [get_bd_pins fft_wrapper_0/clk] \
+  [get_bd_pins sampler/axi_clk] \
+  [get_bd_pins fft_wrapper_0/ap_clk]
+  connect_bd_net -net zynq_cpu_peripheral_aresetn  [get_bd_pins zynq_cpu/peripheral_aresetn] \
+  [get_bd_pins axi_gpio_0/s_axi_aresetn] \
+  [get_bd_pins fft_wrapper_0/ap_rst_n_clk] \
+  [get_bd_pins fft_wrapper_0/ap_rst_n] \
+  [get_bd_pins sampler/s00_axi_aresetn]
 
   # Create address segments
   assign_bd_address -offset 0x41200000 -range 0x00010000 -target_address_space [get_bd_addr_spaces zynq_cpu/zynq/Data] [get_bd_addr_segs axi_gpio_0/S_AXI/Reg] -force

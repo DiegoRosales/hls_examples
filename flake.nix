@@ -13,7 +13,15 @@
     let
       # Xilinx tools only ship for x86_64-linux
       system = "x86_64-linux";
-      pkgs = nixpkgs.legacyPackages.${system};
+      lz4Overlay = final: prev: {
+        lz4 = prev.lz4.overrideAttrs (old: {
+          postInstall = (old.postInstall or "") + ''
+            ln -s $out/bin/lz4 $out/bin/lz4c
+          '';
+        });
+      };
+      pkgs = import nixpkgs { inherit system; overlays = [ lz4Overlay ]; };
+      ccSalt = pkgs.stdenv.cc.suffixSalt;
 
       # Parse requirements.txt and render into a Python environment.
       # validateVersionConstraints is skipped because requirements.txt uses
@@ -54,7 +62,6 @@
             libuuid
             bash
             coreutils
-            stdenv.cc.cc
             xorg.libXext
             xorg.libX11
             xorg.libXrender
@@ -68,15 +75,43 @@
             gtk2
             gtk3
             graphviz
-            gcc
+            # Use the *wrapped* toolchain (gcc_multi and binutils are
+            # cc-wrapper / binutils-wrapper scripts). The wrappers inject the
+            # -B<glibc>/lib, crt paths (Scrt1.o, crti.o), -lgcc_s and
+            # dynamic-linker flags by reading the NIX_* env vars set in
+            # `profile`. The raw, unwrapped compiler (stdenv.cc.cc) ignores
+            # those vars and cannot locate the Nix-store glibc startup files,
+            # which breaks host-tool builds like u-boot's fixdep. stdenv.cc.cc
+            # is deliberately NOT listed so it doesn't shadow the wrapper at
+            # /usr/bin/gcc; stdenv.cc.cc.lib (runtime libs only) is kept.
+            gcc_multi
+            binutils
+            glibc
             glibc.dev
+            stdenv.cc.cc.lib
+            zstd
             unzip
             nettools
             verilator
             pythonEnv
+            gitRepo
+            chrpath
+            diffstat
+            lz4
+            rpcsvc-proto
+            parted
+            git
           ];
           profile = ''
             export LD_LIBRARY_PATH=/usr/lib:/usr/lib64:$LD_LIBRARY_PATH
+
+            # BitBake strips unknown env vars before forking subprocesses.
+            # The NixOS gcc wrapper needs these to locate glibc startup files
+            # (Scrt1.o, crti.o) and libgcc_s in the Nix store — without them
+            # host-tool compilation (e.g. u-boot fixdep) fails.
+            export NIX_DONT_SET_RPATH_${ccSalt}=1
+            export NIX_DYNAMIC_LINKER_${ccSalt}=/lib/ld-linux-x86-64.so.2
+            export BB_ENV_PASSTHROUGH_ADDITIONS="NIX_LDFLAGS NIX_CFLAGS_COMPILE NIX_CFLAGS_LINK NIX_CC_WRAPPER_TARGET_HOST_${ccSalt} NIX_DONT_SET_RPATH_${ccSalt} NIX_DYNAMIC_LINKER_${ccSalt}"
           '';
           runScript = ''
             env LIBRARY_PATH=/usr/lib \

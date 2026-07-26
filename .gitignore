@@ -92,3 +92,6 @@ vivado/*/*
 !vivado/*/constraints/
 vivado/*/constraints/*
 !vivado/*/constraints/*.xdc
+
+edf-build*
+sdt-output*
