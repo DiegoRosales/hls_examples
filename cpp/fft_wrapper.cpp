@@ -21,30 +21,29 @@ void fft_wrapper(
     // Inputs
     hls::stream<TI_INPUT_SIGNAL> &input_signal_stream,
     // Outputs
-    hls::stream<TC_FFT_OUTPUT> &fft_output_stream)
-{
+    hls::stream<TC_FFT_OUTPUT> &fft_output_stream) {
 #pragma HLS DATAFLOW
-    // Objects instantiation
-    static fft<N, n_clog2_c> fft_obj;
-    static input_reorder_buffer<N, n_clog2_c> input_reorder_buffer_obj;
+  // Objects instantiation
+  static fft<N, n_clog2_c> fft_obj;
+  static input_reorder_buffer<N, n_clog2_c> input_reorder_buffer_obj;
 
-    // FFT input arrays
-    TC_FFT fft_input_lower[N / 2];
-    TC_FFT fft_input_upper[N / 2];
+  // FFT input arrays
+  TC_FFT fft_input_lower[N / 2];
+  TC_FFT fft_input_upper[N / 2];
 
-    // Store samples into FFT input memories
-    input_reorder_buffer_obj.store_sample(
-        // Inputs
-        input_signal_stream,
-        // Outputs
-        fft_input_lower,
-        fft_input_upper);
+  // Store samples into FFT input memories
+  input_reorder_buffer_obj.store_sample(
+      // Inputs
+      input_signal_stream,
+      // Outputs
+      fft_input_lower,
+      fft_input_upper);
 
-    // Calculate the FFT
-    fft_obj.doFFT(
-        // Inputs
-        fft_input_lower,
-        fft_input_upper,
-        // Outputs
-        fft_output_stream);
+  // Calculate the FFT
+  fft_obj.doFFT(
+      // Inputs
+      fft_input_lower,
+      fft_input_upper,
+      // Outputs
+      fft_output_stream);
 }

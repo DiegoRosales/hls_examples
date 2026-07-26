@@ -1,5 +1,5 @@
 
-.PHONY: hls
+.PHONY: hls clang_format
 %_hls_build: generate_dat
 	git clean -dfx ./hls/$*_wrapper/;\
 	cd hls/$*_wrapper;\
@@ -31,3 +31,6 @@ generate_dat:
 build_fft_fpga: fft_hls_build
 	$(MAKE) rtl_package
 	$(MAKE) rtl_integ
+
+clang_format:
+	find cpp/ -name "*.cpp" -o -name "*.h" | xargs clang-format -i

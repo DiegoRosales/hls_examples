@@ -11,14 +11,13 @@
 #include "ap_axi_sdata.h"
 
 // Constexpr function to calculate the ceiling of the base-2 logarithm using recursion
-constexpr unsigned int clog2_recursive(unsigned int n, unsigned int p = 0)
-{
-    return (n <= 1) ? p : clog2_recursive((n + 1) / 2, p + 1);
+constexpr unsigned int clog2_recursive(unsigned int n, unsigned int p = 0) {
+  return (n <= 1) ? p : clog2_recursive((n + 1) / 2, p + 1);
 }
 
 // Constants
-static const int N = 256;                        // Number of FFT points
-static const int n_clog2_c = clog2_recursive(N); // clog2(N)
+static const int N = 256;                         // Number of FFT points
+static const int n_clog2_c = clog2_recursive(N);  // clog2(N)
 
 // Types
 // Input signal represented as 24-bit signed integers

@@ -19,198 +19,178 @@
 
 // Define the 'fft' class template
 template <int N, int n_clog2_c>
-class fft
-{
-public:
-    // Pre-computed twiddle factors
-    TC_TWIDDLE_FACTOR twiddle_factors[n_clog2_c][N / 2];
-    // Arrays to store intermediate FFT results for lower and upper stages
-    TC_FFT fft_stage_lower[n_clog2_c][N / 2];
-    TC_FFT fft_stage_upper[n_clog2_c][N / 2];
+class fft {
+ public:
+  // Pre-computed twiddle factors
+  TC_TWIDDLE_FACTOR twiddle_factors[n_clog2_c][N / 2];
+  // Arrays to store intermediate FFT results for lower and upper stages
+  TC_FFT fft_stage_lower[n_clog2_c][N / 2];
+  TC_FFT fft_stage_upper[n_clog2_c][N / 2];
 
-    // Structure to hold pre-computed indexes
-    // Merging these arrays inside a struct allows Vitis HLS to use a single ROM to store the values
-    struct T_PRECOMPUTED_INDEXES
-    {
-        TUI_SAMPLE_ARRAY_IDX idx_upper;
-        TUI_SAMPLE_ARRAY_IDX twiddle_factor_idx;
-    };
-    T_PRECOMPUTED_INDEXES precomputed_idx[n_clog2_c][N / 2];
+  // Structure to hold pre-computed indexes
+  // Merging these arrays inside a struct allows Vitis HLS to use a single ROM to store the values
+  struct T_PRECOMPUTED_INDEXES {
+    TUI_SAMPLE_ARRAY_IDX idx_upper;
+    TUI_SAMPLE_ARRAY_IDX twiddle_factor_idx;
+  };
+  T_PRECOMPUTED_INDEXES precomputed_idx[n_clog2_c][N / 2];
 
-    // Constructor
-    fft(void)
-    {
-        reset(); // Call the reset method to initialize the object
+  // Constructor
+  fft(void) {
+    reset();  // Call the reset method to initialize the object
+  }
+
+  // Destructor
+  ~fft(void) {}
+
+  // Compute twiddle factors at compile time
+  TC_TWIDDLE_FACTOR computeTwiddleFactor(int k) {
+    double angle = -2.0 * M_PI * k / N;                // Calculate angle for twiddle factor
+    return TC_TWIDDLE_FACTOR(cos(angle), sin(angle));  // Return twiddle factor
+  }
+
+  // Reset function
+  void reset() {
+    // Initialize pre-computed indexes
+  INIT_INDEXES:
+    for (int stage_num = 0; stage_num < n_clog2_c; stage_num++) {
+      int m = (N / 2) >> stage_num;
+      for (int i = 0; i < N / 2; i++) {
+        precomputed_idx[stage_num][i].twiddle_factor_idx = TUI_SAMPLE_ARRAY_IDX((i * m) % (N / 2));
+        precomputed_idx[stage_num][i].idx_upper = i ^ (-1 << stage_num) + N / 2;
+      }
     }
 
-    // Destructor
-    ~fft(void) {}
-
-    // Compute twiddle factors at compile time
-    TC_TWIDDLE_FACTOR computeTwiddleFactor(int k)
-    {
-        double angle = -2.0 * M_PI * k / N;               // Calculate angle for twiddle factor
-        return TC_TWIDDLE_FACTOR(cos(angle), sin(angle)); // Return twiddle factor
+    // Initialize the twiddle factors and arrays
+    // We need n_clog2_c ROMs to store the same values in order to enable
+    // true parallel throughput across the entire DATAFLOW pipeline.
+  INIT_TWIDDLE_FACTORS:
+    for (int stage = 0; stage < n_clog2_c; stage++) {
+      for (int k = 0; k < N / 2; k++) {
+        twiddle_factors[stage][k] = computeTwiddleFactor(k);
+      }
     }
+  }
 
-    // Reset function
-    void reset()
-    {
-        // Initialize pre-computed indexes
-    INIT_INDEXES:
-        for (int stage_num = 0; stage_num < n_clog2_c; stage_num++)
-        {
-            int m = (N / 2) >> stage_num;
-            for (int i = 0; i < N / 2; i++)
-            {
-                precomputed_idx[stage_num][i].twiddle_factor_idx = TUI_SAMPLE_ARRAY_IDX((i * m) % (N / 2));
-                precomputed_idx[stage_num][i].idx_upper = i ^ (-1 << stage_num) + N / 2;
-            }
-        }
+  // Function template for complex multiplication using 3 DSPs in hardware
+  template <class T_A, class T_B, class T_C>
+  T_C comp_mult_three_dsp(const T_A &a, const T_B &b) {
+    return T_C(
+        (a.real() * (b.real() - b.imag()) + b.imag() * (a.real() - a.imag())),
+        (a.imag() * (b.real() + b.imag()) + b.imag() * (a.real() - a.imag())));
+  }
 
-        // Initialize the twiddle factors and arrays
-        // We need n_clog2_c ROMs to store the same values in order to enable
-        // true parallel throughput across the entire DATAFLOW pipeline.
-    INIT_TWIDDLE_FACTORS:
-        for (int stage = 0; stage < n_clog2_c; stage++)
-        {
-            for (int k = 0; k < N / 2; k++)
-            {
-                twiddle_factors[stage][k] = computeTwiddleFactor(k);
-            }
-        }
-    }
-
-    // Function template for complex multiplication using 3 DSPs in hardware
-    template <class T_A, class T_B, class T_C>
-    T_C comp_mult_three_dsp(const T_A &a, const T_B &b)
-    {
-        return T_C((a.real() * (b.real() - b.imag()) + b.imag() * (a.real() - a.imag())),
-                   (a.imag() * (b.real() + b.imag()) + b.imag() * (a.real() - a.imag())));
-    }
-
-    // Butterfly operation method
-    template <class T_IN, class T_OUT>
-    void ButterflyOperator(
-        // Inputs
-        T_IN data_in_lower[N / 2],
-        T_IN data_in_upper[N / 2],
-        T_PRECOMPUTED_INDEXES precomputed_idx[N / 2],
-        TC_TWIDDLE_FACTOR twiddle_factors_stage[N / 2],
-        int stage_num,
-        // Outputs
-        T_OUT data_out_lower[N / 2],
-        T_OUT data_out_upper[N / 2])
-    {
+  // Butterfly operation method
+  template <class T_IN, class T_OUT>
+  void ButterflyOperator(
+      // Inputs
+      T_IN data_in_lower[N / 2],
+      T_IN data_in_upper[N / 2],
+      T_PRECOMPUTED_INDEXES precomputed_idx[N / 2],
+      TC_TWIDDLE_FACTOR twiddle_factors_stage[N / 2],
+      int stage_num,
+      // Outputs
+      T_OUT data_out_lower[N / 2],
+      T_OUT data_out_upper[N / 2]) {
 #pragma HLS INLINE OFF
 #pragma HLS FUNCTION_INSTANTIATE variable = stage_num
 
-    // Perform butterfly operation
-    BUTTERFLY_MULTIPLICATION:
-        for (int i = 0; i < N / 2; i++)
-        {
-#pragma HLS PIPELINE II=1
-            T_IN data_lower_swapped;
-            T_IN data_upper_swapped;
-            TUI_SAMPLE_ARRAY_IDX idx = TUI_SAMPLE_ARRAY_IDX(i);
-            TB swap_previous_stage = stage_num != 0 && idx.test(stage_num - 1);
-            TB swap_post_stage = idx.test(stage_num);
-            if (swap_previous_stage)
-            {
-                // Swap input data
-                data_lower_swapped = data_in_upper[precomputed_idx[i].idx_upper];
-                data_upper_swapped = data_in_lower[i];
-            }
-            else
-            {
-                data_lower_swapped = data_in_lower[i];
-                data_upper_swapped = data_in_upper[precomputed_idx[i].idx_upper];
-            }
+  // Perform butterfly operation
+  BUTTERFLY_MULTIPLICATION:
+    for (int i = 0; i < N / 2; i++) {
+#pragma HLS PIPELINE II = 1
+      T_IN data_lower_swapped;
+      T_IN data_upper_swapped;
+      TUI_SAMPLE_ARRAY_IDX idx = TUI_SAMPLE_ARRAY_IDX(i);
+      TB swap_previous_stage = stage_num != 0 && idx.test(stage_num - 1);
+      TB swap_post_stage = idx.test(stage_num);
+      if (swap_previous_stage) {
+        // Swap input data
+        data_lower_swapped = data_in_upper[precomputed_idx[i].idx_upper];
+        data_upper_swapped = data_in_lower[i];
+      } else {
+        data_lower_swapped = data_in_lower[i];
+        data_upper_swapped = data_in_upper[precomputed_idx[i].idx_upper];
+      }
 
-            TC_FFT product = comp_mult_three_dsp<TC_TWIDDLE_FACTOR, TC_FFT, TC_FFT>(twiddle_factors_stage[precomputed_idx[i].twiddle_factor_idx], data_upper_swapped);
+      TC_FFT product = comp_mult_three_dsp<TC_TWIDDLE_FACTOR, TC_FFT, TC_FFT>(
+          twiddle_factors_stage[precomputed_idx[i].twiddle_factor_idx], data_upper_swapped);
 
-            // Swap output data
-            if (swap_post_stage)
-            {
-                data_out_lower[i] = data_lower_swapped - product;
-                data_out_upper[precomputed_idx[i].idx_upper] = data_lower_swapped + product;
-            }
-            else
-            {
-                data_out_lower[i] = data_lower_swapped + product;
-                data_out_upper[precomputed_idx[i].idx_upper] = data_lower_swapped - product;
-            }
-        }
+      // Swap output data
+      if (swap_post_stage) {
+        data_out_lower[i] = data_lower_swapped - product;
+        data_out_upper[precomputed_idx[i].idx_upper] = data_lower_swapped + product;
+      } else {
+        data_out_lower[i] = data_lower_swapped + product;
+        data_out_upper[precomputed_idx[i].idx_upper] = data_lower_swapped - product;
+      }
     }
+  }
 
-    void send_results(
-        // Inputs
-        TC_FFT stage_lower[N / 2],
-        TC_FFT stage_upper[N / 2],
-        // Outputs
-        hls::stream<TC_FFT_OUTPUT> &fft_output_stream)
-    {
-        TC_FFT_OUTPUT fft_output;
-        fft_output.keep = 0xFF;
+  void send_results(
+      // Inputs
+      TC_FFT stage_lower[N / 2],
+      TC_FFT stage_upper[N / 2],
+      // Outputs
+      hls::stream<TC_FFT_OUTPUT> &fft_output_stream) {
+    TC_FFT_OUTPUT fft_output;
+    fft_output.keep = 0xFF;
 
-    SEND_RESULTS_LOOP:
-        for (int i = 0; i < N; i++)
-        {
-#pragma HLS PIPELINE II=1
-            if (i < N / 2)
-                fft_output.data = stage_lower[i];
-            else
-                fft_output.data = stage_upper[i - N / 2];
+  SEND_RESULTS_LOOP:
+    for (int i = 0; i < N; i++) {
+#pragma HLS PIPELINE II = 1
+      if (i < N / 2)
+        fft_output.data = stage_lower[i];
+      else
+        fft_output.data = stage_upper[i - N / 2];
 
-            fft_output.last = (i == N - 1) ? 1 : 0;
-            fft_output_stream.write(fft_output);
-        }
+      fft_output.last = (i == N - 1) ? 1 : 0;
+      fft_output_stream.write(fft_output);
     }
+  }
 
-    // Method to perform FFT computation
-    void doFFT(
-        // Inputs
-        TC_FFT fft_input_lower[N / 2],
-        TC_FFT fft_input_upper[N / 2],
-        // Outputs
-        hls::stream<TC_FFT_OUTPUT> &fft_output_stream)
-    {
+  // Method to perform FFT computation
+  void doFFT(
+      // Inputs
+      TC_FFT fft_input_lower[N / 2],
+      TC_FFT fft_input_upper[N / 2],
+      // Outputs
+      hls::stream<TC_FFT_OUTPUT> &fft_output_stream) {
 #pragma HLS DATAFLOW
-        // Calculate first stage
-        ButterflyOperator<TC_FFT, TC_FFT>(
-            // Inputs
-            fft_input_lower,
-            fft_input_upper,
-            precomputed_idx[0],
-            twiddle_factors[0],
-            0,
-            // Outputs
-            fft_stage_lower[0],
-            fft_stage_upper[0]);
+    // Calculate first stage
+    ButterflyOperator<TC_FFT, TC_FFT>(
+        // Inputs
+        fft_input_lower,
+        fft_input_upper,
+        precomputed_idx[0],
+        twiddle_factors[0],
+        0,
+        // Outputs
+        fft_stage_lower[0],
+        fft_stage_upper[0]);
 
-        // Iterate over remaining stages
-    BUTTERFLY_OPERATOR_LOOP:
-        for (int stage_num = 1; stage_num < n_clog2_c; stage_num++)
-        {
+    // Iterate over remaining stages
+  BUTTERFLY_OPERATOR_LOOP:
+    for (int stage_num = 1; stage_num < n_clog2_c; stage_num++) {
 #pragma HLS unroll
-            ButterflyOperator<TC_FFT, TC_FFT>(
-                // Inputs
-                fft_stage_lower[stage_num - 1],
-                fft_stage_upper[stage_num - 1],
-                precomputed_idx[stage_num],
-                twiddle_factors[stage_num],
-                stage_num,
-                // Outputs
-                fft_stage_lower[stage_num],
-                fft_stage_upper[stage_num]);
-        }
-
-        // Streaming Output process call
-        send_results(
-            // Inputs
-            fft_stage_lower[n_clog2_c - 1],
-            fft_stage_upper[n_clog2_c - 1],
-            // Outputs
-            fft_output_stream);
+      ButterflyOperator<TC_FFT, TC_FFT>(
+          // Inputs
+          fft_stage_lower[stage_num - 1],
+          fft_stage_upper[stage_num - 1],
+          precomputed_idx[stage_num],
+          twiddle_factors[stage_num],
+          stage_num,
+          // Outputs
+          fft_stage_lower[stage_num],
+          fft_stage_upper[stage_num]);
     }
+
+    // Streaming Output process call
+    send_results(
+        // Inputs
+        fft_stage_lower[n_clog2_c - 1],
+        fft_stage_upper[n_clog2_c - 1],
+        // Outputs
+        fft_output_stream);
+  }
 };
