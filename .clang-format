@@ -1,0 +1,12 @@
+Language: Cpp
+BasedOnStyle: Google
+ColumnLimit: 120
+PointerAlignment: Right
+SortIncludes: false
+TabWidth: 2
+IndentWidth: 2
+UseTab: Never
+BinPackParameters: false
+BinPackArguments: false
+AlignAfterOpenBracket: AlwaysBreak
+AllowAllParametersOfDeclarationOnNextLine: false

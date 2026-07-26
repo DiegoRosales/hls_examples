@@ -101,6 +101,7 @@
             rpcsvc-proto
             parted
             git
+            clang-tools
           ];
           profile = ''
             export LD_LIBRARY_PATH=/usr/lib:/usr/lib64:$LD_LIBRARY_PATH

@@ -123,7 +123,7 @@ $(COPY_STAMP): $(WIC_IMAGE) $(BOOTBIN)
 ################################################################################
 .PHONY: generate_dat fft_build_hls rtl_package rtl_integ sdt-output edf-build \
         gen-machine-conf add-pynq-layer build-bootbin build-linux copy-boot-bin \
-        build_fft_fpga test_fft
+        build_fft_fpga test_fft clang_format
 
 generate_dat:     $(DAT_FILES)
 fft_build_hls:    $(HLS_EXPORT)
@@ -139,6 +139,10 @@ gen-sdcard-image: $(COPY_STAMP)
 
 ## Full FPGA flow up to the XSA.
 build_fft_fpga:   $(XSA)
+
+## Format C++ files
+clang_format:
+	find cpp/ -name "*.cpp" -o -name "*.h" | xargs clang-format -i
 
 test_fft:
 	cd cocotb/fft_test && \
