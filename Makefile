@@ -1,6 +1,6 @@
 SHELL := bash
 
-.PHONY: hls
+.PHONY: hls add-pynq-layer
 %_build_hls: generate_dat
 	cd hls/$*_wrapper;\
 	vitis-run --mode hls --tcl build_hls.tcl
@@ -24,8 +24,7 @@ rtl_integ:
 
 ## Generate .dtsi/.dts for the Yocto flow
 sdt-output:
-	sdtgen -xsa ./target/fft_demo_integ/fft_demo_top_wrapper.xsa -dir sdt-output \
-		-user_dts cfg/zybo-compat-overlay.dts"xlnx,zynq-7000"
+	sdtgen -xsa ./target/fft_demo_integ/fft_demo_top_wrapper.xsa -dir sdt-output -user_dts ./cfg/zybo-compat-overlay.dts
 	sed -i 's/compatible = "xlnx,zybo";/compatible = "xlnx,zybo", "xlnx,zynq-7000";/' sdt-output/system-top.dts
 
 ## Setup the Yocto / EDF build environment
@@ -46,12 +45,21 @@ build-bootbin: gen-machine-conf
 	source edf-init-build-env && \
 	MACHINE=zybo-z7-10-custom bitbake xilinx-bootbin
 
-build-linux: build-bootbin
+## Register the local meta-hls-pynq layer (Jupyter server). Idempotent;
+## must run after gen-machine-conf, which regenerates bblayers.conf.
+PYNQ_LAYER := $(CURDIR)/meta-hls-pynq
+add-pynq-layer: gen-machine-conf
+	cd edf-build && \
+	source edf-init-build-env && \
+	( bitbake-layers show-layers | grep -q meta-hls-pynq || \
+	  bitbake-layers add-layer $(PYNQ_LAYER) )
+
+build-linux: build-bootbin add-pynq-layer
 	cd edf-build && \
 	source edf-init-build-env && \
 	MACHINE=amd-cortexa9thf-neon-common bitbake edf-linux-disk-image
 
-copy-boot-bin:
+copy-boot-bin: build-linux
 	cd edf-build && \
 	source edf-init-build-env && \
 	cd tmp/deploy/images && \
@@ -59,7 +67,7 @@ copy-boot-bin:
 
 
 generate_dat:
-	cd python && python ./generate_dat_files.py
+	cd python && python3 ./generate_dat_files.py
 
 build_fft_fpga: fft_build_hls
 	$(MAKE) rtl_package

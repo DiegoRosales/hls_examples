@@ -1,0 +1,54 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          jupyter
+# Required-Start:    $remote_fs $syslog $network
+# Required-Stop:     $remote_fs $syslog $network
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Jupyter Lab server
+# Description:       Start Jupyter Lab serving /home/root/notebooks on :8888
+### END INIT INFO
+
+NOTEBOOK_DIR=/home/root/notebooks
+PIDFILE=/var/run/jupyter.pid
+LOGFILE=/var/log/jupyter.log
+
+export HOME=/home/root
+export SHELL=/bin/bash
+
+is_running() {
+    [ -f "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null
+}
+
+start() {
+    if is_running; then
+        echo "Jupyter Lab already running"
+        return 0
+    fi
+    echo "Starting Jupyter Lab..."
+    # No token/password for local dev convenience; lock this down before
+    # exposing the board to an untrusted network.
+    /usr/bin/jupyter lab --no-browser --allow-root --ip=0.0.0.0 --port=8888 \
+        --notebook-dir="$NOTEBOOK_DIR" \
+        --ServerApp.token= --ServerApp.password= \
+        >"$LOGFILE" 2>&1 &
+    echo $! >"$PIDFILE"
+}
+
+stop() {
+    echo "Stopping Jupyter Lab..."
+    if is_running; then
+        kill "$(cat "$PIDFILE")" 2>/dev/null
+    fi
+    rm -f "$PIDFILE"
+}
+
+case "$1" in
+    start)   start ;;
+    stop)    stop ;;
+    restart) stop; sleep 1; start ;;
+    status)  is_running && echo "running" || { echo "stopped"; exit 1; } ;;
+    *)       echo "Usage: $0 {start|stop|restart|status}"; exit 1 ;;
+esac
+
+exit 0
