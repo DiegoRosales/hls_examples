@@ -135,7 +135,7 @@ gen-machine-conf: $(MACHINE_CONF)
 add-pynq-layer:   $(LAYER_STAMP)
 build-bootbin:    $(BOOTBIN)
 build-linux:      $(WIC_IMAGE)
-gen-sdcard-image  $(COPY_STAMP)
+gen-sdcard-image: $(COPY_STAMP)
 
 ## Full FPGA flow up to the XSA.
 build_fft_fpga:   $(XSA)
