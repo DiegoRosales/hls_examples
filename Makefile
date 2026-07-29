@@ -144,3 +144,8 @@ test_fft:
 	cd cocotb/fft_test && \
 	git clean -dfx . && \
 	$(MAKE)
+
+clean:
+	rm -rf edf-build
+	rm -rf sdt-output
+	git clean -dfx .
