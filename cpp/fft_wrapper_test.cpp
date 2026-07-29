@@ -23,10 +23,10 @@ using namespace std;
 
 int main() {
   // Variable definitions
-  hls::stream<TI_INPUT_SIGNAL> input_signal_stream;  // Stream for input signal
+  hls::stream<TR_INPUT_SIGNAL> input_signal_stream;  // Stream for input signal
   hls::stream<TC_FFT_OUTPUT> fft_output_stream;      // Stream for input signal
-  TI_INPUT_SIGNAL input_sample;                      // Single input sample
-  int input_sample_int;                              // Temporary storage for input sample integer value
+  TR_INPUT_SIGNAL input_sample;                      // Single input sample
+  double input_sample_double;                        // Temporary storage for input sample double value
   TC_FFT fft_input_lower[N / 2];                     // Lower part of FFT input
   TC_FFT fft_input_upper[N / 2];                     // Upper part of FFT input
   TC_FFT_OUTPUT fft_output[N];                       // Full FFT output
@@ -36,6 +36,10 @@ int main() {
   double rmse_last;                                  // Last calculated RMSE%
   double rmse[num_iterations];                       // Array to store RMSE% values for each iteration
   double fft_magnitude_golden_tmp;                   // Temporary storage for golden FFT magnitude
+  TR_WINDOW_COEFFICIENT window_coeffs[N / 2];
+  for (int i = 0; i < N / 2; i++) {
+    window_coeffs[i] = TR_WINDOW_COEFFICIENT(1-1e-15);
+  }
 
   // Relevant file paths
   string root_path = "../../../../../../";
@@ -79,9 +83,9 @@ int main() {
     // Write input samples into input AXI-Stream channel
     samples_counter = 0;
     while (samples_counter < N) {
-      fscanf(fp_ref_input, "%d\n", &input_sample_int);   // Read input signal integer value from file
-      input_sample = TI_INPUT_SIGNAL(input_sample_int);  // Convert integer to input signal type
-      input_signal_stream.write(input_sample);           // Write input signal to input stream
+      fscanf(fp_ref_input, "%lf\n", &input_sample_double);  // Read input signal double value from file
+      input_sample = TR_INPUT_SIGNAL(input_sample_double);  // Convert double to input signal type
+      input_signal_stream.write(input_sample);              // Write input signal to input stream
       samples_counter++;
     }
 
@@ -91,6 +95,7 @@ int main() {
     fft_wrapper(
         // Inputs
         input_signal_stream,
+        window_coeffs,
         // Outputs
         fft_output_stream);
 

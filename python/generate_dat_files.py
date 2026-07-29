@@ -17,6 +17,9 @@ if len(audio_data.shape) == 2:
 else:
     mono_channel = audio_data  # Handle mono audio as well
 
+# Scale the mono channel to the range of -1.0 to 1.0
+mono_channel = mono_channel / np.max(np.abs(mono_channel))
+
 # Export wav file as a dat file
 # Define the file path where you want to save the DAT file
 ref_input_filepath = f"../dat/{wav_filename}.dat"
@@ -25,7 +28,7 @@ os.makedirs(os.path.dirname(ref_input_filepath), exist_ok=True)
 np.savetxt(
     ref_input_filepath,
     mono_channel,
-    fmt="%d",
+    fmt="%.32f",
     delimiter="\n",
     comments="",
 )
@@ -43,10 +46,13 @@ fft_golden_output = []
 for i in range(num_iterations):
     fft_golden_output.append(np.abs(np.fft.fft(mono_channel[i * N : (i + 1) * N])))
 
+bitwidth = np.log2(max(np.abs(np.array(fft_golden_output).flatten()))) + 1
+print(f"INFO: FFT golden output maximum value: {max(np.abs(np.array(fft_golden_output).flatten()))}, bitwidth: {bitwidth:.2f} bits")
+
 np.savetxt(
     golden_output_filepath,
     fft_golden_output,
-    fmt="%lf",
+    fmt="%.32f",
     delimiter="\n",
     comments="",
 )
