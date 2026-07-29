@@ -36,19 +36,11 @@
     in {
       devShells.${system} = {
 
-        # Default: Python environment for ipyfuse development.
-        # All packages are sourced from requirements.txt via pyproject.nix —
-        # no venv or pip install step needed.
-        # Usage: nix develop
-        default = pkgs.mkShell {
-          packages = [ pythonEnv pkgs.verilator ];
-        };
-
         # FHS sandbox for running Xilinx tools (Vivado, Vitis HLS, etc.)
         # Xilinx installers and binaries expect a conventional /usr/lib layout
         # that NixOS does not provide natively; buildFHSEnv creates that layout.
         # Usage: nix develop .#xilinx
-        xilinx = (pkgs.buildFHSEnv {
+        default = (pkgs.buildFHSEnv {
           name = "xilinx-env";
           targetPkgs = pkgs: with pkgs; [
             ncurses5
@@ -102,6 +94,11 @@
             parted
             git
             clang-tools
+            # openssl: used by the Makefile 'root-password' stage to hash the
+            # LINUX_EDF_PASSWORD. Having it on PATH here avoids an ad-hoc
+            # `nix-shell -p openssl`, whose first-run progress bar can corrupt
+            # the terminal.
+            openssl
           ];
           profile = ''
             export LD_LIBRARY_PATH=/usr/lib:/usr/lib64:$LD_LIBRARY_PATH
