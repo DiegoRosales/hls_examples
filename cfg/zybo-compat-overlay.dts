@@ -18,6 +18,15 @@
 &gem0 {
 	phy-handle = <&ethernet_phy>;
 
+	/*
+	 * The board has no MAC EEPROM/eFUSE and U-Boot sets no ethaddr, so the
+	 * macb driver logs "invalid hw address, using random" and generates a
+	 * new random MAC every boot. Pin a fixed one here. 00:0a:35 is Xilinx's
+	 * OUI. Give each physical board a distinct address if you run more than
+	 * one on the same network.
+	 */
+	local-mac-address = [00 0a 35 00 00 01];
+
 	ethernet_phy: ethernet-phy@0 {
 		reg = <0>;
 		device_type = "ethernet-phy";
