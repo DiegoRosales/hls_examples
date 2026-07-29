@@ -21,15 +21,22 @@ static const int n_clog2_c = clog2_recursive(N);  // clog2(N)
 
 // Types
 // Input signal represented as 24-bit signed integers
-typedef ap_int<32> TI_INPUT_SIGNAL;
-// Twiddle factors represented as 16-bit fixed-point with 2 bits for the integer part
-typedef ap_fixed<16, 2> TR_TWIDDLE_FACTOR;
+typedef ap_fixed<32,2> TR_INPUT_SIGNAL;
+
+// Window coefficients represented as 18-bit fixed-point with 0 bits for the integer part
+typedef ap_ufixed<18, 0> TR_WINDOW_COEFFICIENT;
+
+// Twiddle factors represented as 18-bit fixed-point with 2 bits for the integer part
+typedef ap_fixed<18, 2> TR_TWIDDLE_FACTOR;
 typedef std::complex<TR_TWIDDLE_FACTOR> TC_TWIDDLE_FACTOR;
-// FFT values represented as 32-bit fixed-point with 24 bits for the integer part
-typedef ap_fixed<32, 24> TR_FFT;
+
+// FFT values represented as 32-bit fixed-point with 9 bits for the integer part
+typedef ap_fixed<32, 9> TR_FFT;
 typedef std::complex<TR_FFT> TC_FFT;
 typedef hls::axis<TC_FFT> TC_FFT_OUTPUT;
+
 // Indexes represented as unsigned integers
 typedef ap_uint<n_clog2_c> TUI_SAMPLE_ARRAY_IDX;
+
 // Boolean type
 typedef ap_uint<1> TB;

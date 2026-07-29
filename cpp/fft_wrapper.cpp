@@ -19,7 +19,8 @@
 
 void fft_wrapper(
     // Inputs
-    hls::stream<TI_INPUT_SIGNAL> &input_signal_stream,
+    hls::stream<TR_INPUT_SIGNAL> &input_signal_stream,
+    TR_WINDOW_COEFFICIENT window_coeffs[N / 2],
     // Outputs
     hls::stream<TC_FFT_OUTPUT> &fft_output_stream) {
 #pragma HLS DATAFLOW
@@ -35,6 +36,7 @@ void fft_wrapper(
   input_reorder_buffer_obj.store_sample(
       // Inputs
       input_signal_stream,
+      window_coeffs,
       // Outputs
       fft_input_lower,
       fft_input_upper);

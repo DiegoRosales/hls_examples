@@ -15,6 +15,7 @@
 
 void fft_wrapper(
     // Inputs
-    hls::stream<TI_INPUT_SIGNAL> &input_signal_stream,
+    hls::stream<TR_INPUT_SIGNAL> &input_signal_stream,
+    TR_WINDOW_COEFFICIENT window_coeffs[N / 2],
     // Outputs
     hls::stream<TC_FFT_OUTPUT> &fft_output_stream);
