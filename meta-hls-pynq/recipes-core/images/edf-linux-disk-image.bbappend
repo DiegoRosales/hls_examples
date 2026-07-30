@@ -22,3 +22,6 @@ include ${THISDIR}/root-password.inc
 # `pynq get-notebooks`, so /home/root/notebooks is empty at build time and that
 # subpackage is never emitted. jupyter-startup already creates the dir.
 IMAGE_INSTALL:append = " python3-pynq"
+
+# Non-XRT device shim so Overlay/MMIO/allocate work on Zynq-7000 (no XRT).
+IMAGE_INSTALL:append = " python3-zynq-cma-device"

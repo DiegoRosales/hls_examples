@@ -8,10 +8,27 @@ This is **Stage 1**: the Jupyter server only. The Jupyter packages themselves
 come from the `meta-jupyter` layer that is already part of the EDF manifest;
 this layer just pulls them into the image and adds an autostart service.
 
-**Stage 2** (not yet implemented) will add the `pynq` Python library
-(`python3-pynq` + its `pynqmetadata` / `pynqutils` / `grpcio` dependencies and
-the `libcma` C extension) so notebooks can drive the FPGA bitstream directly.
-See [STAGE2-PYNQ-PLAN.md](STAGE2-PYNQ-PLAN.md) for the detailed plan.
+**Stage 2** adds the `pynq` Python library (`python3-pynq` +
+`python3-pynqmetadata` / `python3-pynqutils` + the `libcma` allocator) and a
+kernel fragment enabling the FPGA manager / CMA / UIO.
+
+PYNQ 3.1's device layer needs **XRT**, which isn't available on Zynq-7000/armv7
+(`EmbeddedDevice(XrtDevice)` → `pyxrt`; meta-xilinx `xrt` is aarch64-only), so
+`Overlay(...)` would fail with `RuntimeError: No Devices Found`. To work around
+this, `python3-zynq-cma-device` ships a **`zynq_cma_device`** shim that registers
+a non-XRT PYNQ `Device`: MMIO over `/dev/mem` and DMA buffers from a DDR region
+reserved in the device tree (`pynq-dma@1f000000`, added via
+`cfg/zybo-compat-overlay.dts`). Import it before building an `Overlay`:
+
+```python
+import zynq_cma_device            # registers the non-XRT device
+from pynq import Overlay
+ol = Overlay("design.bit", download=False)   # PL already loaded at boot; run as root
+```
+
+**Status:** `Overlay` + MMIO validated on hardware; the DMA `allocate()` path
+needs the reserved-memory node, so re-flash an image built after this change.
+See [STAGE2-PYNQ-PLAN.md](STAGE2-PYNQ-PLAN.md) for the full analysis.
 
 ## What it provides
 

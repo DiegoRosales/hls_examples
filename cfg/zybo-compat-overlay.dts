@@ -9,6 +9,27 @@
 };
 
 /*
+ * Reserve 16 MiB at the top of the 512 MB DDR for PYNQ DMA buffers. Because
+ * PYNQ 3.1 needs XRT (unavailable on Zynq-7000) and the legacy xlnk /dev/xlnk
+ * allocator is gone from mainline kernels, the meta-hls-pynq zynq_cma_device
+ * shim hands out buffers from this region via /dev/mem instead. 'no-map' keeps
+ * the kernel out of it, so the physical addresses are stable and DMA-safe, and
+ * a /dev/mem mapping of the region is non-cacheable (coherent with the DMA).
+ */
+/ {
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		pynq_dma_reserved: pynq-dma@1f000000 {
+			reg = <0x1f000000 0x1000000>;
+			no-map;
+		};
+	};
+};
+
+/*
  * sdtgen enables gem0 with phy-mode = "rgmii-id" but emits no PHY node or
  * phy-handle, because the PHY is board-level info Vivado does not carry.
  * Without it the macb/phylink driver has no link modes to validate and fails

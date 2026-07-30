@@ -88,19 +88,67 @@ target **Python 3.12**. The recipe currently RDEPENDS the available v2. If
 
 Needs hardware + iteration.
 
-1. **Kernel**: enable **CMA** and **UIO** (`CONFIG_CMA`, `CONFIG_DMA_CMA`,
-   `CONFIG_UIO`, `CONFIG_UIO_PDRV_GENIRQ`). Add a `cma=` bootarg sized for the
-   design.
-2. **Device tree**: expose the FFT IP as a UIO node so pynq/MMIO can map it. Our
-   `sdt-output` flow already generates the base DT; add pynq-style UIO/bootargs
-   (ZYBO-PYNQ's `petalinux_bsp` and PYNQ's `pynq_uio_zynq.dtsi` are references).
-3. **Base overlay**: `Overlay('design.bit')` wants a matching `.hwh` — our Vivado
-   flow already emits both. Decide how the .bit/.hwh get onto the board.
-4. Validate on hardware: `Overlay(...)`, `allocate(...)`, MMIO read/write against
-   the FFT registers.
+**Done — FPGA manager / CMA / UIO kernel fragment.** `import pynq` works, but
+`Overlay(...)` raised `RuntimeError: No Devices Found`: PYNQ's
+`EmbeddedDevice._probe_()` only registers a device if
+`/sys/class/fpga_manager/fpga0/firmware` exists, and the EDF console kernel
+lacked the FPGA manager (the DT already has the `devcfg` node). Added
+`recipes-kernel/linux/linux-xlnx_%.bbappend` + `files/pynq-pl.cfg` enabling
+`FPGA` + `FPGA_MGR_ZYNQ_FPGA`, `UIO`(+`PDRV_GENIRQ`), `XILINX_APF`/`DMA_APF`,
+`CMA`/`DMA_CMA` (128 MB), and unsetting `STRICT_DEVMEM`. Kernel change ⇒ rebuild
+image + **re-flash the SD card**.
 
-Verify: a notebook runs `from pynq import Overlay, allocate`, loads the FFT
-overlay, allocates a buffer, and exchanges data with the IP.
+## BLOCKER (2026-07-30): PYNQ 3.1 needs XRT, unavailable on Zynq-7000
+
+After the kernel fragment, on-board testing hit a hard wall:
+
+- `import pynq` works; `pynqmetadata` works under pydantic v2 (only a warning) —
+  so the pydantic risk was a non-issue.
+- The FPGA manager now exists (`/sys/class/fpga_manager/fpga0`, "operating").
+- But `Overlay(...)` still raised `RuntimeError: No Devices Found`. Root cause:
+  PYNQ 3.1 rebuilt its device model on **XRT** — `EmbeddedDevice(XrtDevice)` and
+  `_get_handle()` calls `pyxrt.device()`. `import pyxrt` fails silently, so
+  device construction throws `NameError: name 'pyxrt' is not defined` and the
+  probe registers nothing. **`pynq.MMIO` also goes through `Device.mmap()`**, so
+  the whole PYNQ device layer is blocked, not just `Overlay`.
+- **Stock XRT can't build for Zynq-7000/armv7**: meta-xilinx `xrt` has
+  `COMPATIBLE_MACHINE` for `zynqmp`/`versal`/`versal-net` only (all aarch64), and
+  there is no `pyxrt`. Official PYNQ-Z2 3.1 images only work because PYNQ's own
+  sdbuild ships a *patched* XRT for armv7.
+
+Note: the FFT bitstream is already programmed at boot (it's inside `boot.bin`,
+loaded by the FSBL), so the PL is live regardless of PYNQ.
+
+### Resolution: the `zynq_cma_device` shim (implemented, working)
+
+Rather than downgrade PYNQ or port XRT, we plug a **non-XRT `Device`** into
+PYNQ 3.1's pluggable device layer. Module: `recipes-python/pynq/files/`
+`zynq_cma_device.py`, shipped by `python3-zynq-cma-device` and imported at the
+top of the notebook.
+
+How it sidesteps XRT:
+- **Registration:** it does *not* define `_probe_` (that would let PYNQ's
+  throwing `EmbeddedDevice._probe_` run first). Instead it sets
+  `Device.active_device` on import, short-circuiting the probe.
+- **Metadata:** parses the `.hwh` directly via `RuntimeMetadataParser(Metadata(
+  ...))`, skipping `get_parser()`'s `xclbinutil`/XRT step.
+- **MMIO:** `mmap` of `/dev/mem` (capability `MEMORY_MAPPED`).
+- **DMA buffers:** a first-fit allocator over a DDR region reserved in the DT
+  (`reserved-memory pynq-dma@1f000000`, 16 MiB, added via
+  `cfg/zybo-compat-overlay.dts`), mapped **non-cacheable** through `/dev/mem`
+  (coherent → no flush/invalidate). The legacy xlnk `/dev/xlnk` allocator is
+  gone from mainline kernels, so `libcma` isn't used.
+
+**Validated on hardware (SSH):** `Overlay(..., download=False)` builds, IPs
+enumerate (`fft_wrapper_0`, `fft_dma`, …), MMIO read/write works, the `DMA`
+driver binds. Run as **root** (for `/dev/mem`).
+
+**Remaining:** the DMA `allocate()` path needs the reserved-memory node, so it
+requires a **rebuild + re-flash** of an image that includes the updated DT and
+`python3-zynq-cma-device`. After that, run the notebook's DMA cells.
+
+Alternatives kept for reference: downgrade to PYNQ 2.6 (xlnk) or port XRT to
+armv7 — both much larger and now unnecessary.
 
 ## Open questions / risks
 
