@@ -11,6 +11,7 @@ this layer just pulls them into the image and adds an autostart service.
 **Stage 2** (not yet implemented) will add the `pynq` Python library
 (`python3-pynq` + its `pynqmetadata` / `pynqutils` / `grpcio` dependencies and
 the `libcma` C extension) so notebooks can drive the FPGA bitstream directly.
+See [STAGE2-PYNQ-PLAN.md](STAGE2-PYNQ-PLAN.md) for the detailed plan.
 
 ## What it provides
 

@@ -23,6 +23,14 @@
       pkgs = import nixpkgs { inherit system; overlays = [ lz4Overlay ]; };
       ccSalt = pkgs.stdenv.cc.suffixSalt;
 
+      # Pin the host/native compiler to GCC 14. nixpkgs-unstable now ships
+      # GCC 15, which defaults to C23 where `bool`/`true`/`false` are keywords;
+      # that breaks older-style build-host helper tools in poky scarthgap
+      # (e.g. ghostscript's `typedef int bool;`). wrapCCMulti keeps multilib and
+      # the cc-wrapper glibc/crt injection that host-tool builds rely on.
+      # (suffixSalt is platform-derived, so ccSalt above is unchanged.)
+      gccMulti14 = pkgs.wrapCCMulti pkgs.gcc14;
+
       # Parse requirements.txt and render into a Python environment.
       # validateVersionConstraints is skipped because requirements.txt uses
       # exact pins (==) that are unlikely to match nixpkgs versions exactly.
@@ -76,7 +84,7 @@
             # which breaks host-tool builds like u-boot's fixdep. stdenv.cc.cc
             # is deliberately NOT listed so it doesn't shadow the wrapper at
             # /usr/bin/gcc; stdenv.cc.cc.lib (runtime libs only) is kept.
-            gcc_multi
+            gccMulti14
             binutils
             glibc
             glibc.dev
@@ -99,6 +107,14 @@
             # `nix-shell -p openssl`, whose first-run progress bar can corrupt
             # the terminal.
             openssl
+            # curl: used to fetch PyPI sdists when authoring python recipes
+            # (checksums/license files for meta-hls-pynq's Stage 2 recipes).
+            curl
+            # perl: OE's rpm packaging runs the host's /usr/bin/perl (perl.prov
+            # shebang) to compute Perl provides for packages shipping .pl files.
+            # Without it, do_package fails with "Couldn't exec .../perl.prov: No
+            # such file or directory" (really the missing shebang interpreter).
+            perl
           ];
           profile = ''
             export LD_LIBRARY_PATH=/usr/lib:/usr/lib64:$LD_LIBRARY_PATH
