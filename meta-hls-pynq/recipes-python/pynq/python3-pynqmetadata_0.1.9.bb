@@ -17,4 +17,4 @@ RDEPENDS:${PN} += " \
 # ships pydantic 2.7.4 (v2), which has breaking API changes, and pydantic 1.9.1
 # itself predates Python 3.12 (our target). If `import pynqmetadata` fails at
 # runtime, add a pydantic v1 recipe (1.10.x supports 3.12) and PREFERRED_VERSION
-# it. See STAGE2-PYNQ-PLAN.md.
+# it. See PYNQ-NOTES.md.

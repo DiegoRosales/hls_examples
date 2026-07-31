@@ -2,7 +2,7 @@ SUMMARY = "Non-XRT PYNQ device shim for Zynq-7000"
 DESCRIPTION = "Installs zynq_cma_device, which registers a PYNQ Device that uses \
 /dev/mem for MMIO and a reserved DDR region for DMA buffers, so Overlay / MMIO / \
 allocate work without XRT (which is unavailable on Zynq-7000). See \
-meta-hls-pynq/STAGE2-PYNQ-PLAN.md."
+meta-hls-pynq/PYNQ-NOTES.md."
 LICENSE = "CLOSED"
 
 SRC_URI = "file://zynq_cma_device.py"

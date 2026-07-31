@@ -61,9 +61,7 @@ FILES:${PN} += "${libdir}/libcma.so /home/root/notebooks"
 PACKAGES += "${PN}-notebooks"
 FILES:${PN}-notebooks = "/home/root/notebooks"
 
-# NOTE: first-pass scarthgap port of PYNQ's langdale python-pynq.inc. Needs a
-# build to validate: (1) gitsm fetch of the local submodule + its nested
-# submodules, (2) the pynq.lib._video C extension cross-building against libdrm,
-# (3) the prebuilt libcma.so.32 being valid for our glibc. See
-# STAGE2-PYNQ-PLAN.md. For a minimal MMIO-only path the _video ext could be
-# dropped by not exporting PYNQ_BUILD_ARCH.
+# scarthgap port of PYNQ's langdale python-pynq.inc: builds from the local
+# submodule via gitsm, cross-builds the pynq.lib._video C extension against
+# libdrm, and installs the prebuilt libcma.so. For a minimal MMIO-only path the
+# _video ext could be dropped by not exporting PYNQ_BUILD_ARCH. See PYNQ-NOTES.md.

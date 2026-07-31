@@ -3,7 +3,7 @@
 Reference notes explaining *why* PYNQ can't drive the PL on this board out of the
 box, what the older mechanism was, and how the compatibility shim
 (`recipes-python/pynq/files/zynq_cma_device.py`) replaces both. For the
-implementation status and build steps see [STAGE2-PYNQ-PLAN.md](STAGE2-PYNQ-PLAN.md).
+implementation and build steps see [PYNQ-NOTES.md](PYNQ-NOTES.md).
 
 ---
 
