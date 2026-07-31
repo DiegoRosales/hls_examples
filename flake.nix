@@ -115,7 +115,38 @@
             # Without it, do_package fails with "Couldn't exec .../perl.prov: No
             # such file or directory" (really the missing shebang interpreter).
             perl
-          ];
+            # wic cp toolchain: the Makefile copy-boot-bin target runs `wic cp`
+            # from the sourced build env (not a bitbake task), so it needs these
+            # host tools on PATH. e2fsprogs provides `debugfs` for writing into
+            # the ext4 rootfs partition (:3); mtools/dosfstools handle the vfat
+            # boot partition (:1). Without debugfs: "Can't find executable
+            # 'debugfs'". nixpkgs e2fsprogs (1.47.4) >= the image's (1.47.0), so
+            # it understands the image's ext4 features.
+            e2fsprogs
+            mtools
+            dosfstools
+           # Extra stuff for Vitis IDE
+            # For future reference, when it silently fails to launch, run:
+            # RDI_VERBOSE=True vitis
+            nss
+            nspr
+            dbus
+            atk
+            cups
+            libdrm
+            pango
+            cairo
+            libxcomposite
+            libxdamage
+            libxfixes
+            libxrandr
+            libgbm
+            expat
+            libxkbcommon
+            libxkbfile
+            alsa-lib
+            libGL
+           ];
           profile = ''
             export LD_LIBRARY_PATH=/usr/lib:/usr/lib64:$LD_LIBRARY_PATH
 
