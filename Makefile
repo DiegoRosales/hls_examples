@@ -24,6 +24,8 @@ SCRIPT_SRCS := scripts/run.tcl scripts/vivado_init.tcl scripts/common_variables.
 PYNQ_LAYER  := $(CURDIR)/meta-hls-pynq
 LAYER_SRCS  := $(shell find meta-hls-pynq -type f)
 
+NOTEBOOK_SRCS := $(shell find notebooks -type f)
+
 ## Root password baked into the rootfs. Override on the command line, e.g.:
 ##   LINUX_EDF_PASSWORD=hunter2 make build-linux
 ## The salt is fixed so the same password yields the same hash (reproducible
@@ -46,6 +48,7 @@ LAYER_STAMP   := edf-build/.stamps/pynq-layer.stamp
 BOOTBIN       := edf-build/build/tmp/deploy/images/zybo-z7-10-custom/boot.bin
 WIC_IMAGE     := edf-build/build/tmp/deploy/images/amd-cortexa9thf-neon-common/edf-linux-disk-image-amd-cortexa9thf-neon-common.rootfs.wic
 COPY_STAMP    := edf-build/.stamps/copy-boot-bin.stamp
+NOTEBOOK_STAGE := edf-build/.stamps/notebooks-stage
 PW_INC        := meta-hls-pynq/recipes-core/images/root-password.inc
 PW_MARKER     := edf-build/.stamps/root-password.value
 
@@ -144,12 +147,29 @@ $(WIC_IMAGE): $(MACHINE_CONF) $(LAYER_STAMP) $(PW_INC) | $(BOOTBIN)
 	source edf-init-build-env && \
 	MACHINE=amd-cortexa9thf-neon-common bitbake edf-linux-disk-image
 
-## Copy boot.bin into the wic image (in-place mutation → tracked via a stamp).
-$(COPY_STAMP): $(WIC_IMAGE) $(BOOTBIN)
+## Copy boot.bin into the wic image (partition 1 = /efi vfat), and stage the
+## contents of ./notebooks plus the bitstream/hwh (extracted from the XSA) into
+## /home/root/notebooks on the rootfs (partition 3 = / ext4, per the wks). The
+## notebooks dir already exists there (created by the python3-pynq recipe and
+## served by Jupyter), so files are copied into it individually. All in-place
+## mutations of the wic → tracked via a stamp.
+##
+## The hand-off is renamed to fft_demo_top_wrapper.hwh so it matches the .bit
+## basename, which is what PYNQ's Overlay('fft_demo_top_wrapper.bit') expects.
+$(COPY_STAMP): $(WIC_IMAGE) $(BOOTBIN) $(XSA) $(NOTEBOOK_SRCS)
+	rm -rf $(NOTEBOOK_STAGE)
+	mkdir -p $(NOTEBOOK_STAGE)
+	cp -r notebooks/. $(NOTEBOOK_STAGE)/
+	unzip -o -j $(XSA) fft_demo_top_wrapper.bit -d $(NOTEBOOK_STAGE)
+	unzip -o -j $(XSA) fft_demo_top.hwh -d $(NOTEBOOK_STAGE)
+	mv $(NOTEBOOK_STAGE)/fft_demo_top.hwh $(NOTEBOOK_STAGE)/fft_demo_top_wrapper.hwh
 	cd edf-build && \
 	source edf-init-build-env && \
 	cd tmp/deploy/images && \
-	wic cp ./zybo-z7-10-custom/boot.bin ./amd-cortexa9thf-neon-common/edf-linux-disk-image-amd-cortexa9thf-neon-common.rootfs.wic:1
+	wic cp ./zybo-z7-10-custom/boot.bin ./amd-cortexa9thf-neon-common/edf-linux-disk-image-amd-cortexa9thf-neon-common.rootfs.wic:1 && \
+	for f in $(CURDIR)/$(NOTEBOOK_STAGE)/*; do \
+	  wic cp "$$f" ./amd-cortexa9thf-neon-common/edf-linux-disk-image-amd-cortexa9thf-neon-common.rootfs.wic:3/home/root/notebooks/ ; \
+	done
 	mkdir -p $(dir $@) && touch $@
 
 ################################################################################
