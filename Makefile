@@ -65,20 +65,17 @@ PW_MARKER     := edf-build/.stamps/root-password.value
 $(DAT_FILES) &: $(DAT_SRCS)
 	cd python && python3 ./generate_dat_files.py
 
-## Vitis HLS: C-sim (where enabled), synth and IP export. One generic rule
-## drives every project in HLS_PROJECTS; each project's build/directive TCL are
-## the common prerequisites, its C++ sources are attached just below.
-$(HLS_EXPORTS): hls/%/vitis_project/hls/impl/export.zip: \
-                hls/%/hls_build.tcl hls/%/directives.tcl
-	cd hls/$* && \
-	vitis-run --mode hls --tcl hls_build.tcl
+## Each HLS project's IP export is built by its own Makefile (hls/<proj>/Makefile),
+## which owns that project's source list and per-stage targets. Delegate via
+## recursive make (FORCE so the sub-make always gets to check freshness; it
+## no-ops cheaply when nothing changed, and only re-touches export.zip on a real
+## change, so downstream PACK/INTEG stay incremental).
+$(HLS_EXPORTS): hls/%/vitis_project/hls/impl/export.zip: FORCE
+	$(MAKE) -C hls/$*
 
-## Per-project C++ sources (change → that project's IP re-synthesizes). The FFT
-## wrapper C-sims against the sample WAV, so it also depends on the .dat.
-$(call hls-export,fft_wrapper): \
-    $(wildcard cpp/fft*.cpp cpp/fft*.h) cpp/window.h cpp/input_reorder_buffer.h $(DAT_WAV)
-$(call hls-export,dma_codec_mux_wrapper): \
-    $(wildcard cpp/dma_codec_mux_wrapper.*)
+## The FFT wrapper C-sims against the generated .dat; make sure it exists before
+## the sub-make runs (order-only: the sub-make itself tracks .dat content).
+$(call hls-export,fft_wrapper): | $(DAT_WAV)
 
 ## Vivado PACK: package the HLS IP as a reusable core.
 $(PACKAGED_CORE): $(HLS_EXPORTS) $(CFG) $(SCRIPT_SRCS)
@@ -204,6 +201,13 @@ build_hls:        $(HLS_EXPORTS)
 ## Per-project alias: 'make hls-<project>' builds just that IP export, e.g.
 ##   make hls-dma_codec_mux_wrapper
 $(foreach p,$(HLS_PROJECTS),$(eval hls-$(p): $(call hls-export,$(p))))
+
+## Per-stage pass-through to a project's own Makefile, e.g.
+##   make hls-fft_wrapper-csim
+HLS_STEPS := csim csynth cosim impl package
+$(foreach p,$(HLS_PROJECTS),$(foreach s,$(HLS_STEPS),\
+  $(eval .PHONY: hls-$(p)-$(s))\
+  $(eval hls-$(p)-$(s): ; $$(MAKE) -C hls/$(p) $(s))))
 
 ## Back-compat alias for the FFT wrapper IP.
 fft_build_hls:    $(call hls-export,fft_wrapper)
