@@ -160,6 +160,7 @@ $(COPY_STAMP): $(WIC_IMAGE) $(BOOTBIN) $(XSA) $(NOTEBOOK_SRCS)
 	rm -rf $(NOTEBOOK_STAGE)
 	mkdir -p $(NOTEBOOK_STAGE)
 	cp -r notebooks/. $(NOTEBOOK_STAGE)/
+	cp ./subsystems/codec_unit/fw/codec_controller.py $(NOTEBOOK_STAGE)/
 	unzip -o -j $(XSA) fft_demo_top_wrapper.bit -d $(NOTEBOOK_STAGE)
 	unzip -o -j $(XSA) fft_demo_top.hwh -d $(NOTEBOOK_STAGE)
 	mv $(NOTEBOOK_STAGE)/fft_demo_top.hwh $(NOTEBOOK_STAGE)/fft_demo_top_wrapper.hwh
