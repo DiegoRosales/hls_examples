@@ -2,6 +2,10 @@
 # service to the EDF disk image.
 IMAGE_INSTALL:append = " packagegroup-python3-jupyter jupyter-startup"
 
+# Enable systemd-resolved mDNS so the board is discoverable as <hostname>.local
+# (e.g. amd-edf.local) with no per-boot 'resolvectl mdns end0 yes'.
+IMAGE_INSTALL:append = " mdns-config"
+
 # PYNQ Python runtime dependencies (from python-pynq.inc) plus matplotlib.
 IMAGE_INSTALL:append = " packagegroup-pynq-python"
 
