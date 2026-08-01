@@ -38,7 +38,7 @@ int main() {
   double fft_magnitude_golden_tmp;                   // Temporary storage for golden FFT magnitude
   TR_WINDOW_COEFFICIENT window_coeffs[N / 2];
   for (int i = 0; i < N / 2; i++) {
-    window_coeffs[i] = TR_WINDOW_COEFFICIENT(1-1e-15);
+    window_coeffs[i] = TR_WINDOW_COEFFICIENT(1 - 1e-15);
   }
 
   // Relevant file paths

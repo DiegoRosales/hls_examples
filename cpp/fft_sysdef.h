@@ -21,7 +21,7 @@ static const int n_clog2_c = clog2_recursive(N);  // clog2(N)
 
 // Types
 // Input signal represented as 24-bit signed integers
-typedef ap_fixed<32,2> TR_INPUT_SIGNAL;
+typedef ap_fixed<32, 2> TR_INPUT_SIGNAL;
 
 // Window coefficients represented as 18-bit fixed-point with 0 bits for the integer part
 typedef ap_ufixed<18, 0> TR_WINDOW_COEFFICIENT;
@@ -37,6 +37,9 @@ typedef hls::axis<TC_FFT> TC_FFT_OUTPUT;
 
 // Indexes represented as unsigned integers
 typedef ap_uint<n_clog2_c> TUI_SAMPLE_ARRAY_IDX;
+
+// CODEC output data type
+typedef ap_uint<24> TUI_CODEC_SIGNAL;
 
 // Boolean type
 typedef ap_uint<1> TB;

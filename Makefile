@@ -9,10 +9,16 @@ SHELL := bash
 ################################################################################
 DAT_SRCS    := python/generate_dat_files.py misc/file_example_WAV_1MG.wav
 
-HLS_SRCS    := $(wildcard hls/cpp/fft*.cpp hls/cpp/fft*.h) \
-               hls/fft_wrapper/hls_build.tcl \
-               hls/fft_wrapper/directives.tcl \
-               hls/fft_wrapper/config.tcl
+## HLS projects: each is a subdirectory of hls/ holding an hls_build.tcl that
+## synthesizes and exports an IP. Add a directory name here and it is picked up
+## by the generic build rule below, the aggregate 'build_hls' target, and a
+## per-project 'hls-<name>' alias. Per-project C++ sources are attached to the
+## rule further down (see "Per-project C++ sources").
+HLS_PROJECTS := fft_wrapper dma_codec_mux_wrapper
+
+## The IP export archive produced by an HLS project's build.
+hls-export   = hls/$(1)/vitis_project/hls/impl/export.zip
+HLS_EXPORTS  := $(foreach p,$(HLS_PROJECTS),$(call hls-export,$(p)))
 
 CFG         := cfg/fft_demo.cfg.json
 SCRIPT_SRCS := scripts/run.tcl scripts/vivado_init.tcl scripts/common_variables.tcl \
@@ -38,7 +44,6 @@ ROOT_PW_SALT       ?= zybohls00
 ################################################################################
 DAT_WAV       := dat/file_example_WAV_1MG.dat
 DAT_FILES     := $(DAT_WAV) dat/fft_golden_output.dat
-HLS_EXPORT    := hls/fft_wrapper/vitis_project/hls/impl/export.zip
 PACKAGED_CORE := target/packaged_cores/codec_unit_pack/component.xml
 XSA           := target/fft_demo_integ/fft_demo_top_wrapper.xsa
 SDT_DTS       := sdt-output/system-top.dts
@@ -60,13 +65,23 @@ PW_MARKER     := edf-build/.stamps/root-password.value
 $(DAT_FILES) &: $(DAT_SRCS)
 	cd python && python3 ./generate_dat_files.py
 
-## Vitis HLS: C-sim, synth, cosim and IP export for the FFT wrapper.
-$(HLS_EXPORT): $(HLS_SRCS) $(DAT_WAV)
-	cd hls/fft_wrapper && \
+## Vitis HLS: C-sim (where enabled), synth and IP export. One generic rule
+## drives every project in HLS_PROJECTS; each project's build/directive TCL are
+## the common prerequisites, its C++ sources are attached just below.
+$(HLS_EXPORTS): hls/%/vitis_project/hls/impl/export.zip: \
+                hls/%/hls_build.tcl hls/%/directives.tcl
+	cd hls/$* && \
 	vitis-run --mode hls --tcl hls_build.tcl
 
+## Per-project C++ sources (change → that project's IP re-synthesizes). The FFT
+## wrapper C-sims against the sample WAV, so it also depends on the .dat.
+$(call hls-export,fft_wrapper): \
+    $(wildcard cpp/fft*.cpp cpp/fft*.h) cpp/window.h cpp/input_reorder_buffer.h $(DAT_WAV)
+$(call hls-export,dma_codec_mux_wrapper): \
+    $(wildcard cpp/dma_codec_mux_wrapper.*)
+
 ## Vivado PACK: package the HLS IP as a reusable core.
-$(PACKAGED_CORE): $(HLS_EXPORT) $(CFG) $(SCRIPT_SRCS)
+$(PACKAGED_CORE): $(HLS_EXPORTS) $(CFG) $(SCRIPT_SRCS)
 	vivado \
 	-mode batch \
 	-source scripts/run.tcl \
@@ -176,12 +191,23 @@ $(COPY_STAMP): $(WIC_IMAGE) $(BOOTBIN) $(XSA) $(NOTEBOOK_SRCS)
 ################################################################################
 ## Friendly phony aliases (each just points at the real artifact above)
 ################################################################################
-.PHONY: generate_dat fft_build_hls rtl_package rtl_integ sdt-output edf-build \
-        gen-machine-conf add-pynq-layer root-password build-bootbin build-linux \
-        copy-boot-bin build_fft_fpga test_fft clang_format FORCE
+.PHONY: generate_dat fft_build_hls build_hls rtl_package rtl_integ sdt-output \
+        edf-build gen-machine-conf add-pynq-layer root-password build-bootbin \
+        build-linux copy-boot-bin build_fft_fpga test_fft clang_format FORCE \
+        $(foreach p,$(HLS_PROJECTS),hls-$(p))
 
 generate_dat:     $(DAT_FILES)
-fft_build_hls:    $(HLS_EXPORT)
+
+## Build every HLS project's IP export.
+build_hls:        $(HLS_EXPORTS)
+
+## Per-project alias: 'make hls-<project>' builds just that IP export, e.g.
+##   make hls-dma_codec_mux_wrapper
+$(foreach p,$(HLS_PROJECTS),$(eval hls-$(p): $(call hls-export,$(p))))
+
+## Back-compat alias for the FFT wrapper IP.
+fft_build_hls:    $(call hls-export,fft_wrapper)
+
 rtl_package:      $(PACKAGED_CORE)
 rtl_integ:        $(XSA)
 sdt-output:       $(SDT_DTS)
@@ -209,6 +235,17 @@ clean:
 	rm -rf edf-build
 	rm -rf sdt-output
 	git clean -dfx .
+
+%_build_hls:
+	cd hls/$*_wrapper;\
+	vitis-run --mode hls --tcl build_hls.tcl
+
+%_hls_gui:
+	cd hls/$*_wrapper;\
+	vitis -w .
+
+%_vivado_gui:
+	vivado ./target/$*_integ/$*_integ.xpr
 
 ## Empty target used to force the password marker recipe to re-evaluate every
 ## run (it then only updates the marker's mtime when the value changed).

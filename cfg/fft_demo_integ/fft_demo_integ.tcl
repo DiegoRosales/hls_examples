@@ -31,7 +31,7 @@ if {[file exists $project_dir]} {
 }
 create_project $project_name $project_dir -part $FPGA_PART_NUMBER -force
 
-set_property ip_repo_paths [list ./target/packaged_cores ./board_files/interfaces ./hls/fft_wrapper/hls_project/solution_1/impl/ip ./hls/fft_wrapper/vitis_project/hls/impl/ip/] [current_project]
+set_property ip_repo_paths [list ./target/packaged_cores ./board_files/interfaces ./hls/fft_wrapper/hls_project/solution_1/impl/ip ./hls/fft_wrapper/vitis_project/hls/impl/ip/ ./hls/dma_codec_mux_wrapper/vitis_project/hls/impl/ip/] [current_project]
 
 integ_utils::load_bus_def $bus_definition_list
 

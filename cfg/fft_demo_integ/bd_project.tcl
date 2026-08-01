@@ -131,6 +131,7 @@ if { $bCheckIPs == 1 } {
 xilinx.com:ip:axi_gpio:2.0\
 xilinx.com:hls:fft_wrapper:1.0\
 xilinx.com:ip:axi_dma:7.1\
+xilinx.com:hls:dma_codec_mux_wrapper:1.0\
 fft_demo:user:codec_unit_top:1.0\
 xilinx.com:ip:xlconstant:1.1\
 xilinx.com:ip:processing_system7:5.5\
@@ -213,6 +214,8 @@ proc create_hier_cell_zynq_cpu { parentCell nameHier } {
   create_bd_intf_pin -mode Master -vlnv xilinx.com:interface:aximm_rtl:1.0 M03_AXI
 
   create_bd_intf_pin -mode Slave -vlnv xilinx.com:interface:aximm_rtl:1.0 S_AXI_HP0
+
+  create_bd_intf_pin -mode Master -vlnv xilinx.com:interface:aximm_rtl:1.0 M04_AXI
 
 
   # Create pins
@@ -494,7 +497,7 @@ proc create_hier_cell_zynq_cpu { parentCell nameHier } {
 
   # Create instance: axi_interconnect_zynq, and set properties
   set axi_interconnect_zynq [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 axi_interconnect_zynq ]
-  set_property CONFIG.NUM_MI {4} $axi_interconnect_zynq
+  set_property CONFIG.NUM_MI {5} $axi_interconnect_zynq
 
 
   # Create instance: intr_concat_zynq, and set properties
@@ -512,6 +515,7 @@ proc create_hier_cell_zynq_cpu { parentCell nameHier } {
   connect_bd_intf_net -intf_net Conn4 [get_bd_intf_pins axi_interconnect_zynq/M00_AXI] [get_bd_intf_pins M00_AXI]
   connect_bd_intf_net -intf_net Conn5 [get_bd_intf_pins axi_interconnect_zynq/M03_AXI] [get_bd_intf_pins M03_AXI]
   connect_bd_intf_net -intf_net Conn6 [get_bd_intf_pins zynq/S_AXI_HP0] [get_bd_intf_pins S_AXI_HP0]
+  connect_bd_intf_net -intf_net Conn7 [get_bd_intf_pins axi_interconnect_zynq/M04_AXI] [get_bd_intf_pins M04_AXI]
   connect_bd_intf_net -intf_net S00_AXI_1 [get_bd_intf_pins axi_interconnect_zynq/S00_AXI] [get_bd_intf_pins zynq/M_AXI_GP0]
   connect_bd_intf_net -intf_net axi_interconnect_zynq_M01_AXI [get_bd_intf_pins M01_AXI] [get_bd_intf_pins axi_interconnect_zynq/M01_AXI]
 
@@ -528,7 +532,8 @@ proc create_hier_cell_zynq_cpu { parentCell nameHier } {
   [get_bd_pins axi_interconnect_zynq/M02_ARESETN] \
   [get_bd_pins axi_interconnect_zynq/S00_ARESETN] \
   [get_bd_pins peripheral_aresetn] \
-  [get_bd_pins axi_interconnect_zynq/M03_ARESETN]
+  [get_bd_pins axi_interconnect_zynq/M03_ARESETN] \
+  [get_bd_pins axi_interconnect_zynq/M04_ARESETN]
   connect_bd_net -net intr_concat_zynq_dout  [get_bd_pins intr_concat_zynq/dout] \
   [get_bd_pins zynq/IRQ_F2P]
   connect_bd_net -net zynq_FCLK_CLK0  [get_bd_pins zynq/FCLK_CLK0] \
@@ -541,7 +546,8 @@ proc create_hier_cell_zynq_cpu { parentCell nameHier } {
   [get_bd_pins zynq/M_AXI_GP0_ACLK] \
   [get_bd_pins cpu_reset_gen/slowest_sync_clk] \
   [get_bd_pins axi_interconnect_zynq/M03_ACLK] \
-  [get_bd_pins zynq/S_AXI_HP0_ACLK]
+  [get_bd_pins zynq/S_AXI_HP0_ACLK] \
+  [get_bd_pins axi_interconnect_zynq/M04_ACLK]
   connect_bd_net -net zynq_FCLK_RESET0_N  [get_bd_pins zynq/FCLK_RESET0_N] \
   [get_bd_pins cpu_reset_gen/ext_reset_in]
 
@@ -724,15 +730,20 @@ proc create_root_design { parentCell } {
   ] $axi_interconnect_0
 
 
+  # Create instance: dma_codec_mux_wrapper_0, and set properties
+  set dma_codec_mux_wrapper_0 [ create_bd_cell -type ip -vlnv xilinx.com:hls:dma_codec_mux_wrapper:1.0 dma_codec_mux_wrapper_0 ]
+
   # Create interface connections
   connect_bd_intf_net -intf_net axi_gpio_0_GPIO [get_bd_intf_ports SW] [get_bd_intf_pins axi_gpio_0/GPIO]
   connect_bd_intf_net -intf_net axi_gpio_0_GPIO2 [get_bd_intf_ports BTN] [get_bd_intf_pins axi_gpio_0/GPIO2]
   connect_bd_intf_net -intf_net axi_interconnect_0_M00_AXI [get_bd_intf_pins axi_interconnect_0/M00_AXI] [get_bd_intf_pins zynq_cpu/S_AXI_HP0]
-  connect_bd_intf_net -intf_net fft_dma_M_AXIS_MM2S [get_bd_intf_pins fft_wrapper_0/input_signal_stream] [get_bd_intf_pins fft_dma/M_AXIS_MM2S]
+  connect_bd_intf_net -intf_net dma_codec_mux_wrapper_0_fft_output_stream [get_bd_intf_pins fft_wrapper_0/input_signal_stream] [get_bd_intf_pins dma_codec_mux_wrapper_0/fft_output_stream]
+  connect_bd_intf_net -intf_net fft_dma_M_AXIS_MM2S [get_bd_intf_pins dma_codec_mux_wrapper_0/stream_from_dma] [get_bd_intf_pins fft_dma/M_AXIS_MM2S]
   connect_bd_intf_net -intf_net fft_dma_M_AXI_MM2S [get_bd_intf_pins fft_dma/M_AXI_MM2S] [get_bd_intf_pins axi_interconnect_0/S00_AXI]
   connect_bd_intf_net -intf_net fft_dma_M_AXI_S2MM [get_bd_intf_pins fft_dma/M_AXI_S2MM] [get_bd_intf_pins axi_interconnect_0/S01_AXI]
-  connect_bd_intf_net -intf_net fft_wrapper_0_fft_output_stream [get_bd_intf_pins fft_dma/S_AXIS_S2MM] [get_bd_intf_pins fft_wrapper_0/fft_output_stream]
+  connect_bd_intf_net -intf_net fft_wrapper_0_fft_output_stream [get_bd_intf_pins fft_wrapper_0/fft_output_stream] [get_bd_intf_pins fft_dma/S_AXIS_S2MM]
   connect_bd_intf_net -intf_net sampler_LED [get_bd_intf_ports LED] [get_bd_intf_pins sampler/LED]
+  connect_bd_intf_net -intf_net sampler_axis_interface_master [get_bd_intf_pins dma_codec_mux_wrapper_0/stream_from_codec] [get_bd_intf_pins sampler/axis_interface_master]
   connect_bd_intf_net -intf_net sampler_codec_i2s [get_bd_intf_ports codec_i2s] [get_bd_intf_pins sampler/codec_i2s]
   connect_bd_intf_net -intf_net zynq_cpu_DDR [get_bd_intf_ports DDR] [get_bd_intf_pins zynq_cpu/DDR]
   connect_bd_intf_net -intf_net zynq_cpu_FIXED_IO [get_bd_intf_ports FIXED_IO] [get_bd_intf_pins zynq_cpu/FIXED_IO]
@@ -740,6 +751,7 @@ proc create_root_design { parentCell } {
   connect_bd_intf_net -intf_net zynq_cpu_M01_AXI [get_bd_intf_pins zynq_cpu/M01_AXI] [get_bd_intf_pins sampler/axi4_lite_interface]
   connect_bd_intf_net -intf_net zynq_cpu_M02_AXI [get_bd_intf_pins zynq_cpu/M02_AXI] [get_bd_intf_pins axi_gpio_0/S_AXI]
   connect_bd_intf_net -intf_net zynq_cpu_M03_AXI [get_bd_intf_pins fft_dma/S_AXI_LITE] [get_bd_intf_pins zynq_cpu/M03_AXI]
+  connect_bd_intf_net -intf_net zynq_cpu_M04_AXI [get_bd_intf_pins dma_codec_mux_wrapper_0/s_axi_axi4l_if] [get_bd_intf_pins zynq_cpu/M04_AXI]
 
   # Create port connections
   connect_bd_net -net Net  [get_bd_ports i2c_scl] \
@@ -763,7 +775,9 @@ proc create_root_design { parentCell } {
   [get_bd_pins axi_interconnect_0/ACLK] \
   [get_bd_pins axi_interconnect_0/S00_ACLK] \
   [get_bd_pins axi_interconnect_0/S01_ACLK] \
-  [get_bd_pins axi_interconnect_0/M00_ACLK]
+  [get_bd_pins axi_interconnect_0/M00_ACLK] \
+  [get_bd_pins dma_codec_mux_wrapper_0/clk] \
+  [get_bd_pins dma_codec_mux_wrapper_0/ap_clk]
   connect_bd_net -net zynq_cpu_peripheral_aresetn  [get_bd_pins zynq_cpu/peripheral_aresetn] \
   [get_bd_pins axi_gpio_0/s_axi_aresetn] \
   [get_bd_pins fft_wrapper_0/ap_rst_n_clk] \
@@ -773,13 +787,16 @@ proc create_root_design { parentCell } {
   [get_bd_pins axi_interconnect_0/ARESETN] \
   [get_bd_pins axi_interconnect_0/S00_ARESETN] \
   [get_bd_pins axi_interconnect_0/S01_ARESETN] \
-  [get_bd_pins axi_interconnect_0/M00_ARESETN]
+  [get_bd_pins axi_interconnect_0/M00_ARESETN] \
+  [get_bd_pins dma_codec_mux_wrapper_0/ap_rst_n_clk] \
+  [get_bd_pins dma_codec_mux_wrapper_0/ap_rst_n]
 
   # Create address segments
   assign_bd_address -offset 0x00000000 -range 0x20000000 -target_address_space [get_bd_addr_spaces fft_dma/Data_MM2S] [get_bd_addr_segs zynq_cpu/zynq/S_AXI_HP0/HP0_DDR_LOWOCM] -force
   assign_bd_address -offset 0x00000000 -range 0x20000000 -target_address_space [get_bd_addr_spaces fft_dma/Data_S2MM] [get_bd_addr_segs zynq_cpu/zynq/S_AXI_HP0/HP0_DDR_LOWOCM] -force
   assign_bd_address -offset 0x41200000 -range 0x00010000 -target_address_space [get_bd_addr_spaces zynq_cpu/zynq/Data] [get_bd_addr_segs axi_gpio_0/S_AXI/Reg] -force
   assign_bd_address -offset 0x43C00000 -range 0x00010000 -target_address_space [get_bd_addr_spaces zynq_cpu/zynq/Data] [get_bd_addr_segs sampler/codec_controller/axi4_lite_interface_memory_map/codec_controller_regmap] -force
+  assign_bd_address -offset 0x40010000 -range 0x00010000 -target_address_space [get_bd_addr_spaces zynq_cpu/zynq/Data] [get_bd_addr_segs dma_codec_mux_wrapper_0/s_axi_axi4l_if/Reg] -force
   assign_bd_address -offset 0x40400000 -range 0x00010000 -target_address_space [get_bd_addr_spaces zynq_cpu/zynq/Data] [get_bd_addr_segs fft_dma/S_AXI_LITE/Reg] -force
   assign_bd_address -offset 0x40000000 -range 0x00010000 -target_address_space [get_bd_addr_spaces zynq_cpu/zynq/Data] [get_bd_addr_segs fft_wrapper_0/s_axi_axi4l_if/Reg] -force
 
