@@ -38,15 +38,14 @@ class input_reorder_buffer {
       TC_FFT fft_input_upper[N / 2])  // Array for upper half of FFT input
   {
     TUI_SAMPLE_ARRAY_IDX idx_reordered;  // Index for reordered sample
-                                         // Apply windowing function to the input sample
+    static window<N> window_obj;        // Persists sample_counter_ across invocations
 
     // Read samples from input channel until N samples are stored
     for (int i = 0; i < N; i++) {
-#pragma HLS PIPELINE II = 1
+#pragma HLS PIPELINE II = 1 rewind
       // Apply windowing function to the input sample
       TR_INPUT_SIGNAL input_sample;
       input_signal_stream.read(input_sample);  // Read input sample from stream
-      static window<N> window_obj;
       TR_FFT input_sample_windowed;
       window_obj.apply_window(input_sample, window_coeffs, input_sample_windowed);
 

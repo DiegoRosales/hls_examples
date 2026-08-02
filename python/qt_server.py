@@ -108,3 +108,5 @@ app = QApplication(sys.argv)
 window = RealTimePlotWindow()
 window.show()
 sys.exit(app.exec())
+
+# %%

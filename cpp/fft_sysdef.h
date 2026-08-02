@@ -20,8 +20,8 @@ static const int N = 256;                         // Number of FFT points
 static const int n_clog2_c = clog2_recursive(N);  // clog2(N)
 
 // Types
-// Input signal represented as 24-bit signed integers
-typedef ap_fixed<32, 2> TR_INPUT_SIGNAL;
+// Input signal represented as 32-bit fixed-point with 2 bits for the integer part
+typedef ap_fixed<32,2> TR_INPUT_SIGNAL;
 
 // Window coefficients represented as 18-bit fixed-point with 0 bits for the integer part
 typedef ap_ufixed<18, 0> TR_WINDOW_COEFFICIENT;
@@ -30,8 +30,11 @@ typedef ap_ufixed<18, 0> TR_WINDOW_COEFFICIENT;
 typedef ap_fixed<18, 2> TR_TWIDDLE_FACTOR;
 typedef std::complex<TR_TWIDDLE_FACTOR> TC_TWIDDLE_FACTOR;
 
-// FFT values represented as 32-bit fixed-point with 9 bits for the integer part
-typedef ap_fixed<32, 9> TR_FFT;
+// FFT values represented as 32-bit fixed-point with 10 bits for the integer part,
+// giving 2x headroom over the worst-case unscaled DFT sum (N * max|input|).
+// Convergent rounding (rather than the default truncation) avoids a biased
+// error accumulating across each of the n_clog2_c butterfly stages.
+typedef ap_fixed<32, 10, AP_RND_CONV, AP_SAT> TR_FFT;
 typedef std::complex<TR_FFT> TC_FFT;
 typedef hls::axis<TC_FFT> TC_FFT_OUTPUT;
 
