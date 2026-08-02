@@ -38,6 +38,7 @@ NOTEBOOK_SRCS := $(shell find notebooks -type f)
 ## builds; the image only rebuilds when the password actually changes).
 LINUX_EDF_PASSWORD ?= test123
 ROOT_PW_SALT       ?= zybohls00
+BOARD_HOSTNAME     ?= amd-edf.local
 
 ################################################################################
 ## Artifacts produced by each stage (these ARE the make targets)
@@ -250,6 +251,11 @@ clean:
 
 %_vivado_gui:
 	vivado ./target/$*_integ/$*_integ.xpr
+
+## Copy boot.bin to the board and reboot
+load_boot.bin:
+	scp ./edf-build/build/tmp/deploy/images/zybo-z7-10-custom/boot.bin root@$(BOARD_HOSTNAME):/efi/boot.bin
+	ssh root@$(BOARD_HOSTNAME) -t 'reboot'
 
 ## Empty target used to force the password marker recipe to re-evaluate every
 ## run (it then only updates the marker's mtime when the value changed).

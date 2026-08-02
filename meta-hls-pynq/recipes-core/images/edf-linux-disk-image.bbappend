@@ -6,6 +6,11 @@ IMAGE_INSTALL:append = " packagegroup-python3-jupyter jupyter-startup"
 # (e.g. amd-edf.local) with no per-boot 'resolvectl mdns end0 yes'.
 IMAGE_INSTALL:append = " mdns-config"
 
+# Permit password-based root SSH login (debug-tweaks is off, so OpenSSH would
+# otherwise reject the baked-in root password). Lets you scp a new boot.bin to
+# the board instead of pulling the SD card.
+IMAGE_INSTALL:append = " ssh-permit-root"
+
 # PYNQ Python runtime dependencies (from python-pynq.inc) plus matplotlib.
 IMAGE_INSTALL:append = " packagegroup-pynq-python"
 
