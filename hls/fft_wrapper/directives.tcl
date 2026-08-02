@@ -1,4 +1,5 @@
-set_directive_interface fft_wrapper -mode ap_ctrl_chain return
+config_compile -pipeline_style frp
+set_directive_interface fft_wrapper -mode ap_ctrl_hs return
 set_directive_interface fft_wrapper -mode axis -register_mode both input_signal_stream -register=true
 set_directive_interface fft_wrapper -mode axis -register_mode both fft_output_stream -register=true
 set_directive_interface fft_wrapper -mode s_axilite -bundle axi4l_if -clock clk return

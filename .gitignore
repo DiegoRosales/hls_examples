@@ -90,6 +90,7 @@ vivado/*
 !vivado/*/
 vivado/*/*
 !vivado/*/*.tcl
+!vivado/*/*.sh
 !vivado/*/constraints/
 vivado/*/constraints/*
 !vivado/*/constraints/*.xdc

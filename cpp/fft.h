@@ -98,7 +98,7 @@ class fft {
   // Perform butterfly operation
   BUTTERFLY_MULTIPLICATION:
     for (int i = 0; i < N / 2; i++) {
-#pragma HLS PIPELINE II = 1
+#pragma HLS PIPELINE II = 1 rewind
       T_IN data_lower_swapped;
       T_IN data_upper_swapped;
       TUI_SAMPLE_ARRAY_IDX idx = TUI_SAMPLE_ARRAY_IDX(i);
@@ -138,7 +138,7 @@ class fft {
 
   SEND_RESULTS_LOOP:
     for (int i = 0; i < N; i++) {
-#pragma HLS PIPELINE II = 1
+#pragma HLS PIPELINE II = 1 rewind
       if (i < N / 2)
         fft_output.data = stage_lower[i];
       else
