@@ -180,9 +180,9 @@ class CodecController:
         log("Setting USB / 44.1 kHz...")
         self.codec_wr(R_SAMPLE, 0x23, check=True)
 
-        # Analog audio path (0x04): DACSEL=1, no bypass.
+        # Analog audio path (0x04): DACSEL=1, bypass enable (mix the line input with the output).
         log("Setting the analog audio path...")
-        self.codec_wr(R_ANALOG, 0x10, check=True)
+        self.codec_wr(R_ANALOG, 0x18, check=True)
 
         # Digital audio path (0x05): unmute DAC (DACMU=0), enable ADC HPF.
         log("Removing the mute...")
