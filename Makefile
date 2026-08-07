@@ -20,7 +20,7 @@ HLS_PROJECTS := fft_wrapper dma_codec_mux_wrapper
 hls-export   = hls/$(1)/vitis_project/hls/impl/export.zip
 HLS_EXPORTS  := $(foreach p,$(HLS_PROJECTS),$(call hls-export,$(p)))
 
-CFG         := cfg/fft_demo.cfg.json
+CFG         := cfg/fft_demo_zybo.cfg.json
 SCRIPT_SRCS := scripts/run.tcl scripts/vivado_init.tcl scripts/common_variables.tcl \
                $(wildcard scripts/utils/*.tcl) \
                $(wildcard scripts/pack/*.tcl) \
@@ -46,7 +46,7 @@ BOARD_HOSTNAME     ?= amd-edf.local
 DAT_WAV       := dat/file_example_WAV_1MG.dat
 DAT_FILES     := $(DAT_WAV) dat/fft_golden_output.dat
 PACKAGED_CORE := target/packaged_cores/codec_unit_pack/component.xml
-XSA           := target/fft_demo_integ/fft_demo_top_wrapper.xsa
+XSA           := target/fft_demo_zybo_integ/fft_demo_top_wrapper.xsa
 SDT_DTS       := sdt-output/system-top.dts
 EDF_STAMP     := edf-build/.repo/manifest.xml
 MACHINE_CONF  := edf-build/build/conf/machine/zybo-z7-10-custom.conf

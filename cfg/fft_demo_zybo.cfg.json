@@ -3,7 +3,7 @@
 ////////////////////////////////
 {
 
-  "project_name": "fft_demo",
+  "project_name": "fft_demo_zybo",
   "project_root": "${git_root}",
   /////////////////////
   // Ingredients
@@ -19,7 +19,7 @@
   ],
 
   // Project integration script
-  "project_integ_script": "${project_root}/cfg/fft_demo_integ/fft_demo_integ.tcl",
+  "project_integ_script": "${project_root}/cfg/fft_demo_zybo_integ/fft_demo_zybo_integ.tcl",
 
   // User interface definitions
   "user_interfaces_dir": "${project_root}/board_files/interfaces",
