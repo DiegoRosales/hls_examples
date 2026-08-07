@@ -1,0 +1,55 @@
+/*
+ * sdtgen derives the root compatible from the Vivado board name ("zybo"),
+ * producing only "xlnx,zybo". The Zynq machine driver matches on
+ * "xlnx,zynq-7000", so without it the SLCR iomap never runs and
+ * clk_register_zynq_pll crashes with a NULL dereference at boot.
+ */
+/ {
+	compatible = "xlnx,zybo", "xlnx,zynq-7000";
+};
+
+/*
+ * Reserve 16 MiB at the top of the 512 MB DDR for PYNQ DMA buffers. Because
+ * PYNQ 3.1 needs XRT (unavailable on Zynq-7000) and the legacy xlnk /dev/xlnk
+ * allocator is gone from mainline kernels, the meta-hls-pynq zynq_cma_device
+ * shim hands out buffers from this region via /dev/mem instead. 'no-map' keeps
+ * the kernel out of it, so the physical addresses are stable and DMA-safe, and
+ * a /dev/mem mapping of the region is non-cacheable (coherent with the DMA).
+ */
+/ {
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		pynq_dma_reserved: pynq-dma@1f000000 {
+			reg = <0x1f000000 0x1000000>;
+			no-map;
+		};
+	};
+};
+
+/*
+ * sdtgen enables gem0 with phy-mode = "rgmii-id" but emits no PHY node or
+ * phy-handle, because the PHY is board-level info Vivado does not carry.
+ * Without it the macb/phylink driver has no link modes to validate and fails
+ * with "Could not attach PHY (-22)". The Zybo (7z010) has a Realtek RTL8211E
+ * on MDIO address 0.
+ */
+&gem0 {
+	phy-handle = <&ethernet_phy>;
+
+	/*
+	 * The board has no MAC EEPROM/eFUSE and U-Boot sets no ethaddr, so the
+	 * macb driver logs "invalid hw address, using random" and generates a
+	 * new random MAC every boot. Pin a fixed one here. 00:0a:35 is Xilinx's
+	 * OUI. Give each physical board a distinct address if you run more than
+	 * one on the same network.
+	 */
+	local-mac-address = [00 0a 35 00 00 01];
+
+	ethernet_phy: ethernet-phy@0 {
+		reg = <0>;
+		device_type = "ethernet-phy";
+	};
+};

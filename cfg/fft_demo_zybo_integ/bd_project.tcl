@@ -20,7 +20,7 @@ set script_folder [_tcl::get_script_folder]
 ################################################################
 # Check if script is running in correct Vivado version.
 ################################################################
-set scripts_vivado_version 2024.1
+set scripts_vivado_version 2025.2
 set current_vivado_version [version -short]
 
 if { [string first $scripts_vivado_version $current_vivado_version] == -1 } {
@@ -65,7 +65,7 @@ set run_remote_bd_flow 1
 if { $run_remote_bd_flow == 1 } {
   # Set the reference directory for source file relative paths (by default 
   # the value is script directory path)
-  set origin_dir ./target/fft_demo_integ/bd
+  set origin_dir ./target/fft_demo_zybo_integ/bd
 
   # Use origin directory path location variable, if specified in the tcl shell
   if { [info exists ::origin_dir_loc] } {
@@ -130,6 +130,8 @@ if { $bCheckIPs == 1 } {
    set list_check_ips "\ 
 xilinx.com:ip:axi_gpio:2.0\
 xilinx.com:hls:fft_wrapper:1.0\
+xilinx.com:ip:axi_dma:7.1\
+xilinx.com:hls:dma_codec_mux_wrapper:1.0\
 fft_demo:user:codec_unit_top:1.0\
 xilinx.com:ip:xlconstant:1.1\
 xilinx.com:ip:processing_system7:5.5\
@@ -209,6 +211,12 @@ proc create_hier_cell_zynq_cpu { parentCell nameHier } {
 
   create_bd_intf_pin -mode Master -vlnv xilinx.com:interface:aximm_rtl:1.0 M00_AXI
 
+  create_bd_intf_pin -mode Master -vlnv xilinx.com:interface:aximm_rtl:1.0 M03_AXI
+
+  create_bd_intf_pin -mode Slave -vlnv xilinx.com:interface:aximm_rtl:1.0 S_AXI_HP0
+
+  create_bd_intf_pin -mode Master -vlnv xilinx.com:interface:aximm_rtl:1.0 M04_AXI
+
 
   # Create pins
   create_bd_pin -dir I -from 0 -to 0 In0
@@ -251,7 +259,7 @@ proc create_hier_cell_zynq_cpu { parentCell nameHier } {
     CONFIG.PCW_DDR_RAM_HIGHADDR {0x1FFFFFFF} \
     CONFIG.PCW_ENET0_ENET0_IO {MIO 16 .. 27} \
     CONFIG.PCW_ENET0_GRP_MDIO_ENABLE {1} \
-    CONFIG.PCW_ENET0_GRP_MDIO_IO {EMIO} \
+    CONFIG.PCW_ENET0_GRP_MDIO_IO {MIO 52 .. 53} \
     CONFIG.PCW_ENET0_PERIPHERAL_ENABLE {1} \
     CONFIG.PCW_ENET0_PERIPHERAL_FREQMHZ {1000 Mbps} \
     CONFIG.PCW_ENET0_RESET_ENABLE {0} \
@@ -430,9 +438,9 @@ proc create_hier_cell_zynq_cpu { parentCell nameHier } {
     CONFIG.PCW_MIO_9_PULLUP {enabled} \
     CONFIG.PCW_MIO_9_SLEW {slow} \
     CONFIG.PCW_MIO_TREE_PERIPHERALS {GPIO#Quad SPI Flash#Quad SPI Flash#Quad SPI Flash#Quad SPI Flash#Quad SPI Flash#Quad SPI Flash#GPIO#Quad SPI Flash#GPIO#GPIO#GPIO#GPIO#GPIO#GPIO#GPIO#Enet 0#Enet 0#Enet\
-0#Enet 0#Enet 0#Enet 0#Enet 0#Enet 0#Enet 0#Enet 0#Enet 0#Enet 0#USB 0#USB 0#USB 0#USB 0#USB 0#USB 0#USB 0#USB 0#USB 0#USB 0#USB 0#USB 0#SD 0#SD 0#SD 0#SD 0#SD 0#SD 0#USB Reset#SD 0#UART 1#UART 1#GPIO#GPIO#GPIO#GPIO}\
-\
-    CONFIG.PCW_MIO_TREE_SIGNALS {gpio[0]#qspi0_ss_b#qspi0_io[0]#qspi0_io[1]#qspi0_io[2]#qspi0_io[3]/HOLD_B#qspi0_sclk#gpio[7]#qspi_fbclk#gpio[9]#gpio[10]#gpio[11]#gpio[12]#gpio[13]#gpio[14]#gpio[15]#tx_clk#txd[0]#txd[1]#txd[2]#txd[3]#tx_ctl#rx_clk#rxd[0]#rxd[1]#rxd[2]#rxd[3]#rx_ctl#data[4]#dir#stp#nxt#data[0]#data[1]#data[2]#data[3]#clk#data[5]#data[6]#data[7]#clk#cmd#data[0]#data[1]#data[2]#data[3]#reset#cd#tx#rx#gpio[50]#gpio[51]#gpio[52]#gpio[53]}\
+0#Enet 0#Enet 0#Enet 0#Enet 0#Enet 0#Enet 0#Enet 0#Enet 0#Enet 0#USB 0#USB 0#USB 0#USB 0#USB 0#USB 0#USB 0#USB 0#USB 0#USB 0#USB 0#USB 0#SD 0#SD 0#SD 0#SD 0#SD 0#SD 0#USB Reset#SD 0#UART 1#UART 1#GPIO#GPIO#Enet\
+0#Enet 0} \
+    CONFIG.PCW_MIO_TREE_SIGNALS {gpio[0]#qspi0_ss_b#qspi0_io[0]#qspi0_io[1]#qspi0_io[2]#qspi0_io[3]/HOLD_B#qspi0_sclk#gpio[7]#qspi_fbclk#gpio[9]#gpio[10]#gpio[11]#gpio[12]#gpio[13]#gpio[14]#gpio[15]#tx_clk#txd[0]#txd[1]#txd[2]#txd[3]#tx_ctl#rx_clk#rxd[0]#rxd[1]#rxd[2]#rxd[3]#rx_ctl#data[4]#dir#stp#nxt#data[0]#data[1]#data[2]#data[3]#clk#data[5]#data[6]#data[7]#clk#cmd#data[0]#data[1]#data[2]#data[3]#reset#cd#tx#rx#gpio[50]#gpio[51]#mdc#mdio}\
 \
     CONFIG.PCW_PRESET_BANK1_VOLTAGE {LVCMOS 1.8V} \
     CONFIG.PCW_QSPI_GRP_FBCLK_ENABLE {1} \
@@ -483,12 +491,13 @@ proc create_hier_cell_zynq_cpu { parentCell nameHier } {
     CONFIG.PCW_USB_RESET_ENABLE {1} \
     CONFIG.PCW_USB_RESET_SELECT {Share reset pin} \
     CONFIG.PCW_USE_FABRIC_INTERRUPT {1} \
+    CONFIG.PCW_USE_S_AXI_HP0 {1} \
   ] $zynq
 
 
   # Create instance: axi_interconnect_zynq, and set properties
   set axi_interconnect_zynq [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 axi_interconnect_zynq ]
-  set_property CONFIG.NUM_MI {3} $axi_interconnect_zynq
+  set_property CONFIG.NUM_MI {5} $axi_interconnect_zynq
 
 
   # Create instance: intr_concat_zynq, and set properties
@@ -504,17 +513,43 @@ proc create_hier_cell_zynq_cpu { parentCell nameHier } {
   connect_bd_intf_net -intf_net Conn2 [get_bd_intf_pins zynq/FIXED_IO] [get_bd_intf_pins FIXED_IO]
   connect_bd_intf_net -intf_net Conn3 [get_bd_intf_pins axi_interconnect_zynq/M02_AXI] [get_bd_intf_pins M02_AXI]
   connect_bd_intf_net -intf_net Conn4 [get_bd_intf_pins axi_interconnect_zynq/M00_AXI] [get_bd_intf_pins M00_AXI]
+  connect_bd_intf_net -intf_net Conn5 [get_bd_intf_pins axi_interconnect_zynq/M03_AXI] [get_bd_intf_pins M03_AXI]
+  connect_bd_intf_net -intf_net Conn6 [get_bd_intf_pins zynq/S_AXI_HP0] [get_bd_intf_pins S_AXI_HP0]
+  connect_bd_intf_net -intf_net Conn7 [get_bd_intf_pins axi_interconnect_zynq/M04_AXI] [get_bd_intf_pins M04_AXI]
   connect_bd_intf_net -intf_net S00_AXI_1 [get_bd_intf_pins axi_interconnect_zynq/S00_AXI] [get_bd_intf_pins zynq/M_AXI_GP0]
   connect_bd_intf_net -intf_net axi_interconnect_zynq_M01_AXI [get_bd_intf_pins M01_AXI] [get_bd_intf_pins axi_interconnect_zynq/M01_AXI]
 
   # Create port connections
-  connect_bd_net -net In0_1 [get_bd_pins In0] [get_bd_pins intr_concat_zynq/In0]
-  connect_bd_net -net In1_1 [get_bd_pins In1] [get_bd_pins intr_concat_zynq/In1]
-  connect_bd_net -net cpu_reset_gen_interconnect_aresetn [get_bd_pins cpu_reset_gen/interconnect_aresetn] [get_bd_pins axi_interconnect_zynq/ARESETN]
-  connect_bd_net -net cpu_reset_gen_peripheral_aresetn [get_bd_pins cpu_reset_gen/peripheral_aresetn] [get_bd_pins axi_interconnect_zynq/M00_ARESETN] [get_bd_pins axi_interconnect_zynq/M01_ARESETN] [get_bd_pins axi_interconnect_zynq/M02_ARESETN] [get_bd_pins axi_interconnect_zynq/S00_ARESETN] [get_bd_pins peripheral_aresetn]
-  connect_bd_net -net intr_concat_zynq_dout [get_bd_pins intr_concat_zynq/dout] [get_bd_pins zynq/IRQ_F2P]
-  connect_bd_net -net zynq_FCLK_CLK0 [get_bd_pins zynq/FCLK_CLK0] [get_bd_pins FCLK_CLK0] [get_bd_pins axi_interconnect_zynq/ACLK] [get_bd_pins axi_interconnect_zynq/M00_ACLK] [get_bd_pins axi_interconnect_zynq/M01_ACLK] [get_bd_pins axi_interconnect_zynq/M02_ACLK] [get_bd_pins axi_interconnect_zynq/S00_ACLK] [get_bd_pins zynq/M_AXI_GP0_ACLK] [get_bd_pins cpu_reset_gen/slowest_sync_clk]
-  connect_bd_net -net zynq_FCLK_RESET0_N [get_bd_pins zynq/FCLK_RESET0_N] [get_bd_pins cpu_reset_gen/ext_reset_in]
+  connect_bd_net -net In0_1  [get_bd_pins In0] \
+  [get_bd_pins intr_concat_zynq/In0]
+  connect_bd_net -net In1_1  [get_bd_pins In1] \
+  [get_bd_pins intr_concat_zynq/In1]
+  connect_bd_net -net cpu_reset_gen_interconnect_aresetn  [get_bd_pins cpu_reset_gen/interconnect_aresetn] \
+  [get_bd_pins axi_interconnect_zynq/ARESETN]
+  connect_bd_net -net cpu_reset_gen_peripheral_aresetn  [get_bd_pins cpu_reset_gen/peripheral_aresetn] \
+  [get_bd_pins axi_interconnect_zynq/M00_ARESETN] \
+  [get_bd_pins axi_interconnect_zynq/M01_ARESETN] \
+  [get_bd_pins axi_interconnect_zynq/M02_ARESETN] \
+  [get_bd_pins axi_interconnect_zynq/S00_ARESETN] \
+  [get_bd_pins peripheral_aresetn] \
+  [get_bd_pins axi_interconnect_zynq/M03_ARESETN] \
+  [get_bd_pins axi_interconnect_zynq/M04_ARESETN]
+  connect_bd_net -net intr_concat_zynq_dout  [get_bd_pins intr_concat_zynq/dout] \
+  [get_bd_pins zynq/IRQ_F2P]
+  connect_bd_net -net zynq_FCLK_CLK0  [get_bd_pins zynq/FCLK_CLK0] \
+  [get_bd_pins FCLK_CLK0] \
+  [get_bd_pins axi_interconnect_zynq/ACLK] \
+  [get_bd_pins axi_interconnect_zynq/M00_ACLK] \
+  [get_bd_pins axi_interconnect_zynq/M01_ACLK] \
+  [get_bd_pins axi_interconnect_zynq/M02_ACLK] \
+  [get_bd_pins axi_interconnect_zynq/S00_ACLK] \
+  [get_bd_pins zynq/M_AXI_GP0_ACLK] \
+  [get_bd_pins cpu_reset_gen/slowest_sync_clk] \
+  [get_bd_pins axi_interconnect_zynq/M03_ACLK] \
+  [get_bd_pins zynq/S_AXI_HP0_ACLK] \
+  [get_bd_pins axi_interconnect_zynq/M04_ACLK]
+  connect_bd_net -net zynq_FCLK_RESET0_N  [get_bd_pins zynq/FCLK_RESET0_N] \
+  [get_bd_pins cpu_reset_gen/ext_reset_in]
 
   # Restore current instance
   current_bd_instance $oldCurInst
@@ -585,13 +620,21 @@ proc create_hier_cell_sampler { parentCell nameHier } {
   connect_bd_intf_net -intf_net axi4_lite_interface_1 [get_bd_intf_pins axi4_lite_interface] [get_bd_intf_pins codec_controller/axi4_lite_interface]
 
   # Create port connections
-  connect_bd_net -net Net [get_bd_pins i2c_scl] [get_bd_pins codec_controller/i2c_scl]
-  connect_bd_net -net Net1 [get_bd_pins i2c_sda] [get_bd_pins codec_controller/i2c_sda]
-  connect_bd_net -net axi_clk_1 [get_bd_pins axi_clk] [get_bd_pins codec_controller/axi_clk]
-  connect_bd_net -net board_clk_1 [get_bd_pins board_clk] [get_bd_pins codec_controller/board_clk]
-  connect_bd_net -net codec_controller_DOWNSTREAM_almost_empty [get_bd_pins codec_controller/DOWNSTREAM_almost_empty] [get_bd_pins DOWNSTREAM_almost_empty]
-  connect_bd_net -net s00_axi_aresetn_1 [get_bd_pins s00_axi_aresetn] [get_bd_pins codec_controller/s00_axi_aresetn] [get_bd_pins codec_controller/axis_aresetn]
-  connect_bd_net -net xlconstant_0_dout [get_bd_pins const1/dout] [get_bd_pins codec_controller/reset_n]
+  connect_bd_net -net Net  [get_bd_pins i2c_scl] \
+  [get_bd_pins codec_controller/i2c_scl]
+  connect_bd_net -net Net1  [get_bd_pins i2c_sda] \
+  [get_bd_pins codec_controller/i2c_sda]
+  connect_bd_net -net axi_clk_1  [get_bd_pins axi_clk] \
+  [get_bd_pins codec_controller/axi_clk]
+  connect_bd_net -net board_clk_1  [get_bd_pins board_clk] \
+  [get_bd_pins codec_controller/board_clk]
+  connect_bd_net -net codec_controller_DOWNSTREAM_almost_empty  [get_bd_pins codec_controller/DOWNSTREAM_almost_empty] \
+  [get_bd_pins DOWNSTREAM_almost_empty]
+  connect_bd_net -net s00_axi_aresetn_1  [get_bd_pins s00_axi_aresetn] \
+  [get_bd_pins codec_controller/s00_axi_aresetn] \
+  [get_bd_pins codec_controller/axis_aresetn]
+  connect_bd_net -net xlconstant_0_dout  [get_bd_pins const1/dout] \
+  [get_bd_pins codec_controller/reset_n]
 
   # Restore current instance
   current_bd_instance $oldCurInst
@@ -667,37 +710,100 @@ proc create_root_design { parentCell } {
   # Create instance: fft_wrapper_0, and set properties
   set fft_wrapper_0 [ create_bd_cell -type ip -vlnv xilinx.com:hls:fft_wrapper:1.0 fft_wrapper_0 ]
 
+  # Create instance: fft_dma, and set properties
+  set fft_dma [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_dma:7.1 fft_dma ]
+  set_property -dict [list \
+    CONFIG.c_include_mm2s {1} \
+    CONFIG.c_include_s2mm {1} \
+    CONFIG.c_include_sg {0} \
+    CONFIG.c_m_axi_s2mm_data_width {64} \
+    CONFIG.c_s_axis_s2mm_tdata_width {64} \
+    CONFIG.c_sg_length_width {26} \
+  ] $fft_dma
+
+
+  # Create instance: axi_interconnect_0, and set properties
+  set axi_interconnect_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 axi_interconnect_0 ]
+  set_property -dict [list \
+    CONFIG.NUM_MI {1} \
+    CONFIG.NUM_SI {2} \
+  ] $axi_interconnect_0
+
+
+  # Create instance: dma_codec_mux_wrapper_0, and set properties
+  set dma_codec_mux_wrapper_0 [ create_bd_cell -type ip -vlnv xilinx.com:hls:dma_codec_mux_wrapper:1.0 dma_codec_mux_wrapper_0 ]
+
   # Create interface connections
   connect_bd_intf_net -intf_net axi_gpio_0_GPIO [get_bd_intf_ports SW] [get_bd_intf_pins axi_gpio_0/GPIO]
   connect_bd_intf_net -intf_net axi_gpio_0_GPIO2 [get_bd_intf_ports BTN] [get_bd_intf_pins axi_gpio_0/GPIO2]
+  connect_bd_intf_net -intf_net axi_interconnect_0_M00_AXI [get_bd_intf_pins axi_interconnect_0/M00_AXI] [get_bd_intf_pins zynq_cpu/S_AXI_HP0]
+  connect_bd_intf_net -intf_net dma_codec_mux_wrapper_0_fft_output_stream [get_bd_intf_pins fft_wrapper_0/input_signal_stream] [get_bd_intf_pins dma_codec_mux_wrapper_0/fft_output_stream]
+  connect_bd_intf_net -intf_net fft_dma_M_AXIS_MM2S [get_bd_intf_pins dma_codec_mux_wrapper_0/stream_from_dma] [get_bd_intf_pins fft_dma/M_AXIS_MM2S]
+  connect_bd_intf_net -intf_net fft_dma_M_AXI_MM2S [get_bd_intf_pins fft_dma/M_AXI_MM2S] [get_bd_intf_pins axi_interconnect_0/S00_AXI]
+  connect_bd_intf_net -intf_net fft_dma_M_AXI_S2MM [get_bd_intf_pins fft_dma/M_AXI_S2MM] [get_bd_intf_pins axi_interconnect_0/S01_AXI]
+  connect_bd_intf_net -intf_net fft_wrapper_0_fft_output_stream [get_bd_intf_pins fft_wrapper_0/fft_output_stream] [get_bd_intf_pins fft_dma/S_AXIS_S2MM]
   connect_bd_intf_net -intf_net sampler_LED [get_bd_intf_ports LED] [get_bd_intf_pins sampler/LED]
-  connect_bd_intf_net -intf_net sampler_axis_interface_master [get_bd_intf_pins sampler/axis_interface_master] [get_bd_intf_pins fft_wrapper_0/input_signal_stream]
+  connect_bd_intf_net -intf_net sampler_axis_interface_master [get_bd_intf_pins dma_codec_mux_wrapper_0/stream_from_codec] [get_bd_intf_pins sampler/axis_interface_master]
   connect_bd_intf_net -intf_net sampler_codec_i2s [get_bd_intf_ports codec_i2s] [get_bd_intf_pins sampler/codec_i2s]
   connect_bd_intf_net -intf_net zynq_cpu_DDR [get_bd_intf_ports DDR] [get_bd_intf_pins zynq_cpu/DDR]
   connect_bd_intf_net -intf_net zynq_cpu_FIXED_IO [get_bd_intf_ports FIXED_IO] [get_bd_intf_pins zynq_cpu/FIXED_IO]
   connect_bd_intf_net -intf_net zynq_cpu_M00_AXI [get_bd_intf_pins zynq_cpu/M00_AXI] [get_bd_intf_pins fft_wrapper_0/s_axi_axi4l_if]
   connect_bd_intf_net -intf_net zynq_cpu_M01_AXI [get_bd_intf_pins zynq_cpu/M01_AXI] [get_bd_intf_pins sampler/axi4_lite_interface]
   connect_bd_intf_net -intf_net zynq_cpu_M02_AXI [get_bd_intf_pins zynq_cpu/M02_AXI] [get_bd_intf_pins axi_gpio_0/S_AXI]
+  connect_bd_intf_net -intf_net zynq_cpu_M03_AXI [get_bd_intf_pins fft_dma/S_AXI_LITE] [get_bd_intf_pins zynq_cpu/M03_AXI]
+  connect_bd_intf_net -intf_net zynq_cpu_M04_AXI [get_bd_intf_pins dma_codec_mux_wrapper_0/s_axi_axi4l_if] [get_bd_intf_pins zynq_cpu/M04_AXI]
 
   # Create port connections
-  connect_bd_net -net Net [get_bd_ports i2c_scl] [get_bd_pins sampler/i2c_scl]
-  connect_bd_net -net Net1 [get_bd_ports i2c_sda] [get_bd_pins sampler/i2c_sda]
-  connect_bd_net -net axi_gpio_0_ip2intc_irpt [get_bd_pins axi_gpio_0/ip2intc_irpt] [get_bd_pins zynq_cpu/In0]
-  connect_bd_net -net board_clk_1 [get_bd_ports board_clk] [get_bd_pins sampler/board_clk]
-  connect_bd_net -net sampler_DOWNSTREAM_almost_empty [get_bd_pins sampler/DOWNSTREAM_almost_empty] [get_bd_pins zynq_cpu/In1]
-  connect_bd_net -net zynq_cpu_FCLK_CLK0 [get_bd_pins zynq_cpu/FCLK_CLK0] [get_bd_pins axi_gpio_0/s_axi_aclk] [get_bd_pins fft_wrapper_0/clk] [get_bd_pins sampler/axi_clk] [get_bd_pins fft_wrapper_0/ap_clk]
-  connect_bd_net -net zynq_cpu_peripheral_aresetn [get_bd_pins zynq_cpu/peripheral_aresetn] [get_bd_pins axi_gpio_0/s_axi_aresetn] [get_bd_pins fft_wrapper_0/ap_rst_n_clk] [get_bd_pins fft_wrapper_0/ap_rst_n] [get_bd_pins sampler/s00_axi_aresetn]
+  connect_bd_net -net Net  [get_bd_ports i2c_scl] \
+  [get_bd_pins sampler/i2c_scl]
+  connect_bd_net -net Net1  [get_bd_ports i2c_sda] \
+  [get_bd_pins sampler/i2c_sda]
+  connect_bd_net -net axi_gpio_0_ip2intc_irpt  [get_bd_pins axi_gpio_0/ip2intc_irpt] \
+  [get_bd_pins zynq_cpu/In0]
+  connect_bd_net -net board_clk_1  [get_bd_ports board_clk] \
+  [get_bd_pins sampler/board_clk]
+  connect_bd_net -net sampler_DOWNSTREAM_almost_empty  [get_bd_pins sampler/DOWNSTREAM_almost_empty] \
+  [get_bd_pins zynq_cpu/In1]
+  connect_bd_net -net zynq_cpu_FCLK_CLK0  [get_bd_pins zynq_cpu/FCLK_CLK0] \
+  [get_bd_pins axi_gpio_0/s_axi_aclk] \
+  [get_bd_pins fft_wrapper_0/clk] \
+  [get_bd_pins sampler/axi_clk] \
+  [get_bd_pins fft_wrapper_0/ap_clk] \
+  [get_bd_pins fft_dma/s_axi_lite_aclk] \
+  [get_bd_pins fft_dma/m_axi_mm2s_aclk] \
+  [get_bd_pins fft_dma/m_axi_s2mm_aclk] \
+  [get_bd_pins axi_interconnect_0/ACLK] \
+  [get_bd_pins axi_interconnect_0/S00_ACLK] \
+  [get_bd_pins axi_interconnect_0/S01_ACLK] \
+  [get_bd_pins axi_interconnect_0/M00_ACLK] \
+  [get_bd_pins dma_codec_mux_wrapper_0/clk] \
+  [get_bd_pins dma_codec_mux_wrapper_0/ap_clk]
+  connect_bd_net -net zynq_cpu_peripheral_aresetn  [get_bd_pins zynq_cpu/peripheral_aresetn] \
+  [get_bd_pins axi_gpio_0/s_axi_aresetn] \
+  [get_bd_pins fft_wrapper_0/ap_rst_n_clk] \
+  [get_bd_pins fft_wrapper_0/ap_rst_n] \
+  [get_bd_pins sampler/s00_axi_aresetn] \
+  [get_bd_pins fft_dma/axi_resetn] \
+  [get_bd_pins axi_interconnect_0/ARESETN] \
+  [get_bd_pins axi_interconnect_0/S00_ARESETN] \
+  [get_bd_pins axi_interconnect_0/S01_ARESETN] \
+  [get_bd_pins axi_interconnect_0/M00_ARESETN] \
+  [get_bd_pins dma_codec_mux_wrapper_0/ap_rst_n_clk] \
+  [get_bd_pins dma_codec_mux_wrapper_0/ap_rst_n]
 
   # Create address segments
+  assign_bd_address -offset 0x00000000 -range 0x20000000 -target_address_space [get_bd_addr_spaces fft_dma/Data_MM2S] [get_bd_addr_segs zynq_cpu/zynq/S_AXI_HP0/HP0_DDR_LOWOCM] -force
+  assign_bd_address -offset 0x00000000 -range 0x20000000 -target_address_space [get_bd_addr_spaces fft_dma/Data_S2MM] [get_bd_addr_segs zynq_cpu/zynq/S_AXI_HP0/HP0_DDR_LOWOCM] -force
   assign_bd_address -offset 0x41200000 -range 0x00010000 -target_address_space [get_bd_addr_spaces zynq_cpu/zynq/Data] [get_bd_addr_segs axi_gpio_0/S_AXI/Reg] -force
   assign_bd_address -offset 0x43C00000 -range 0x00010000 -target_address_space [get_bd_addr_spaces zynq_cpu/zynq/Data] [get_bd_addr_segs sampler/codec_controller/axi4_lite_interface_memory_map/codec_controller_regmap] -force
+  assign_bd_address -offset 0x40010000 -range 0x00010000 -target_address_space [get_bd_addr_spaces zynq_cpu/zynq/Data] [get_bd_addr_segs dma_codec_mux_wrapper_0/s_axi_axi4l_if/Reg] -force
+  assign_bd_address -offset 0x40400000 -range 0x00010000 -target_address_space [get_bd_addr_spaces zynq_cpu/zynq/Data] [get_bd_addr_segs fft_dma/S_AXI_LITE/Reg] -force
   assign_bd_address -offset 0x40000000 -range 0x00010000 -target_address_space [get_bd_addr_spaces zynq_cpu/zynq/Data] [get_bd_addr_segs fft_wrapper_0/s_axi_axi4l_if/Reg] -force
 
 
   # Restore current instance
   current_bd_instance $oldCurInst
 
-  validate_bd_design
   save_bd_design
 }
 # End of create_root_design()
@@ -709,4 +815,6 @@ proc create_root_design { parentCell } {
 
 create_root_design ""
 
+
+common::send_gid_msg -ssname BD::TCL -id 2053 -severity "WARNING" "This Tcl script was generated from a block design that has not been validated. It is possible that design <$design_name> may result in errors during validation."
 

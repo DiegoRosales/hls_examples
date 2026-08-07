@@ -41,5 +41,8 @@ typedef hls::axis<TC_FFT> TC_FFT_OUTPUT;
 // Indexes represented as unsigned integers
 typedef ap_uint<n_clog2_c> TUI_SAMPLE_ARRAY_IDX;
 
+// CODEC output data type
+typedef ap_uint<16> TUI_CODEC_SIGNAL;
+
 // Boolean type
 typedef ap_uint<1> TB;

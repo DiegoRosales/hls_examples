@@ -95,7 +95,7 @@ module codec_unit_top #(
   input  wire          m_axis_tready,  // Ready (RD)
   output wire          m_axis_tvalid,  // Data Valid
   output wire [63 : 0] m_axis_tdata,   // Data
-  output wire          m_axis_tlast,
+  // output wire          m_axis_tlast,
 
   ///////////////////////////
   //// Interrupt Signals ////  
@@ -263,7 +263,7 @@ audio_unit_top audio_unit_top (
   .m_axis_tready ( m_axis_tready ), // Ready (RD)
   .m_axis_tvalid ( m_axis_tvalid ), // Data Valid
   .m_axis_tdata  ( m_axis_tdata  ), // Data
-  .m_axis_tlast  ( m_axis_tlast  ),
+  // .m_axis_tlast  ( m_axis_tlast  ),
 
   .heartbeat     ( heartbeat     ),
   

@@ -74,6 +74,9 @@ logic [63:0] audio_data_out_pre;
 // Input data for the FIFO
 wire [63:0] audio_data_in_pre;
 
+// Deserializer counter (up to 64)
+logic [6:0] deserializer_bit_cnt;
+
 // Ouptut serial data
 //assign ac_pbdat = audio_data_out_shift_reg[0];
 assign ac_pbdat = (justification) ? audio_data_out_shift_reg[0] : audio_data_out_shift_reg[63];
@@ -150,10 +153,10 @@ end
 // All modes shift in MSB first
 // The least significant bits are the Left channel
 // The most significant bits are the Right channel
-assign audio_data_in_pre = (word_length == 2'b00) ? { {16{1'b0}}, audio_data_in_shift_reg[63:48], {16{1'b0}}, audio_data_in_shift_reg[47:32]} : // 16-bit
-                           (word_length == 2'b01) ? { {12{1'b0}}, audio_data_in_shift_reg[63:44], {12{1'b0}}, audio_data_in_shift_reg[43:24]} : // 20-bit
-                           (word_length == 2'b10) ? { {8{1'b0}} , audio_data_in_shift_reg[63:40], {8{1'b0}} , audio_data_in_shift_reg[39:16]} : // 24-bit
-                           (word_length == 2'b11) ? {             audio_data_in_shift_reg[63:32],             audio_data_in_shift_reg[31:0]}  : // 32-bit
+assign audio_data_in_pre = (word_length == 2'b00) ? { {16{1'b0}}, audio_data_in_shift_reg[32 +: 16], {16{1'b0}}, audio_data_in_shift_reg[0 +: 16]} : // 16-bit
+                           (word_length == 2'b01) ? { {12{1'b0}}, audio_data_in_shift_reg[32 +: 20], {12{1'b0}}, audio_data_in_shift_reg[0 +: 20]} : // 20-bit
+                           (word_length == 2'b10) ? { {8{1'b0}} , audio_data_in_shift_reg[32 +: 24], {8{1'b0}} , audio_data_in_shift_reg[0 +: 24]} : // 24-bit
+                           (word_length == 2'b11) ? {             audio_data_in_shift_reg[32 +: 32],             audio_data_in_shift_reg[0 +: 32]}  : // 32-bit
                            'h0;
 
 // Shift Register for the input data
@@ -161,14 +164,18 @@ always_ff @(posedge ac_bclk) begin
   audio_data_in_wr  <= 1'b0;
 
   // Write the new data
-  if ( ac_reclrc && s_axis_tready ) begin
+  if ( ac_reclrc ) begin
     audio_data_in_to_fifo <= audio_data_in_pre;
     audio_data_in_wr      <= 1'b1;
+    deserializer_bit_cnt  <= '0;
   end
   // Shift the data
   else begin
     // Input Data
-    audio_data_in_shift_reg  <= { ac_recdat, audio_data_in_shift_reg[63:1]};
+    if (deserializer_bit_cnt < 64) begin
+      audio_data_in_shift_reg  <= { ac_recdat, audio_data_in_shift_reg[63:1] };
+      deserializer_bit_cnt += 1;
+    end
   end
 end
 

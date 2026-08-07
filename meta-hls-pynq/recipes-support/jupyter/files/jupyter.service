@@ -1,0 +1,18 @@
+[Unit]
+Description=Jupyter Lab Server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/root
+Environment=HOME=/home/root
+Environment=SHELL=/bin/bash
+# No token/password for local dev convenience; lock this down before exposing
+# the board to an untrusted network.
+ExecStart=/usr/bin/jupyter lab --no-browser --allow-root --ip=0.0.0.0 --port=8888 --notebook-dir=/home/root/notebooks --ServerApp.token= --ServerApp.password=
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

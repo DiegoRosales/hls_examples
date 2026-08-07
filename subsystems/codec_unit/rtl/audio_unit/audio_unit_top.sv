@@ -137,10 +137,10 @@ module audio_unit_top(
 
   // Counter for a heartbeat signal to make sure that the clock from the CODEC is running
   assign heartbeat = {
-                      DOWNSTREAM_missed_counter[14], // Bit 3
-                      DOWNSTREAM_missed_counter[4],  // Bit 2
-                      axi_fifo_wr_counter[14],       // Bit 1
-                      serializer_fifo_rd_counter[14] // Bit 0
+                      DOWNSTREAM_missed_counter[14],  // Bit 3
+                      DOWNSTREAM_missed_counter[4],   // Bit 2
+                      serializer_fifo_wr_counter[14], // Bit 1
+                      axi_fifo_rd_counter[14]         // Bit 0
                       };
 
 
@@ -149,6 +149,7 @@ module audio_unit_top(
 
   // Read counter (DMA Reading from FIFO)
   assign DMA_fifo_rd = m_axis_tready && m_axis_tvalid;
+  assign UPSTREAM_axis_rd_data_count = axi_fifo_rd_counter[31:0];
   always @(posedge axis_aclk or negedge axis_aresetn)
     if (axis_aresetn == 1'b0) axi_fifo_rd_counter <= 'h0;
     else axi_fifo_rd_counter <= (DMA_fifo_rd) ? axi_fifo_rd_counter + 1 : axi_fifo_rd_counter;
@@ -335,7 +336,7 @@ module audio_unit_top(
 
     /// MISC
     .axis_wr_data_count ( UPSTREAM_axis_wr_data_count ), // output wire [31 : 0] axis_wr_data_count
-    .axis_rd_data_count ( UPSTREAM_axis_rd_data_count )  // output wire [31 : 0] axis_rd_data_count
+    .axis_rd_data_count (  )  // output wire [31 : 0] axis_rd_data_count
   );
 
 endmodule
